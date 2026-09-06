@@ -10,13 +10,21 @@
         h2 { text-align: center; color: #333; margin-top: 0; }
         label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; color: #555; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 15px; font-size: 16px; font-weight: bold; color: white; background-color: #007bff; border: none; border-radius: 5px; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
-        #btnGPS { background-color: #17a2b8; margin-top: 5px; }
+        button { width: 100%; padding: 15px; font-size: 16px; font-weight: bold; color: white; background-color: #007bff; border: none; border-radius: 5px; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); cursor: pointer; }
         #btnEnviar { background-color: #28a745; }
         #travaSeguranca { background-color: #ffeb3b; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px; border: 2px solid #fd7e14; }
-        #btnTrava { background-color: #dc3545; font-size: 18px; }
+        #btnTrava { background-color: #dc3545; font-size: 18px; margin-top: 10px; }
         #avisoOffline { background-color: #ff9800; color: white; padding: 10px; text-align: center; border-radius: 5px; margin-bottom: 15px; font-weight: bold; }
+        
+        /* Navegação */
+        .menu-abas { display: flex; gap: 10px; margin-bottom: 20px; }
+        .aba { flex: 1; padding: 12px; margin-top: 0; background-color: #6c757d; }
+        .aba.ativa { background-color: #007bff; }
         .escondido { display: none; }
+
+        /* Estilo do Pátio */
+        .card-veiculo { border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 10px; background: #f9f9f9; }
+        .btn-saida { background-color: #dc3545; padding: 10px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -25,79 +33,130 @@
     <h2>Vistoria Digital</h2>
 
     <div id="avisoOffline" class="escondido">
-        ⚠️ Sem internet. Romaneios salvos no celular: <span id="contadorOffline">0</span>. O envio será automático quando o sinal voltar.
+        ⚠️ Sem internet. Romaneios na fila: <span id="contadorOffline">0</span>.
     </div>
 
+    <!-- Abas de Navegação -->
+    <div class="menu-abas" id="menuNavegacao" class="escondido">
+        <button class="aba ativa" id="abaEntrada" onclick="mudarAba('entrada')">📥 ENTRADA</button>
+        <button class="aba" id="abaPatio" onclick="mudarAba('patio')">🚛 PÁTIO</button>
+    </div>
+
+    <!-- Trava de Segurança -->
     <div id="travaSeguranca">
         <h3 style="margin-top:0; color:#dc3545;">ATENÇÃO</h3>
         <p><strong>O veículo está TOTALMENTE imobilizado, calçado e com motor desligado?</strong></p>
-        <button id="btnTrava" onclick="liberarApp()">SIM, CONFIRMO</button>
+        <button id="btnTrava" onclick="solicitarGPS()">SIM, CONFIRMO</button>
     </div>
 
-    <form id="formRomaneio" class="escondido" onsubmit="processarFormulario(event)">
-        <label>Empresa</label>
-        <input type="text" id="empresa" placeholder="Ex: Farmax ou Nome da Terceirizada" required>
+    <!-- TELA 1: ENTRADA -->
+    <div id="telaEntrada" class="escondido">
+        <form id="formRomaneio" onsubmit="processarFormulario(event, 'Entrada')">
+            <label>Empresa *</label>
+            <input type="text" id="empresa" placeholder="Ex: Farmax ou Nome da Terceirizada" required>
 
-        <label>Portaria</label>
-        <select id="portaria">
-            <option value="P1">Portaria 1</option>
-            <option value="P2">Portaria 2</option>
-            <option value="P3">Portaria 3</option>
-            <option value="Tanques">Área dos Tanques</option>
-        </select>
+            <label>Portaria *</label>
+            <select id="portaria" required>
+                <option value="" disabled selected>Selecione a Portaria...</option>
+                <option value="P1">Portaria 1</option>
+                <option value="P2">Portaria 2</option>
+                <option value="P3">Portaria 3</option>
+                <option value="Tanques">Área dos Tanques</option>
+            </select>
 
-        <label>Tipo de Veículo</label>
-        <select id="tipoVeiculo">
-            <option value="Pequeno">Veículo Pequeno</option>
-            <option value="Carreta">Caminhão / Carreta</option>
-        </select>
+            <label>Tipo de Veículo *</label>
+            <select id="tipoVeiculo" required>
+                <option value="" disabled selected>Selecione o Tipo...</option>
+                <option value="Pequeno">Veículo Pequeno</option>
+                <option value="Carreta">Caminhão / Carreta</option>
+            </select>
 
-        <label>Nome do Motorista</label>
-        <input type="text" id="motorista" placeholder="Nome Completo">
+            <label>Nome do Motorista *</label>
+            <input type="text" id="motorista" placeholder="Nome Completo" required>
 
-        <label>Localização GPS (Obrigatório)</label>
-        <input type="text" id="localizacao" placeholder="Aguardando GPS..." readonly required>
-        <button type="button" id="btnGPS" onclick="capturarGPS()">📍 Pegar Minha Localização</button>
+            <label>Localização GPS</label>
+            <input type="text" id="localizacao" placeholder="Capturado automaticamente" readonly required>
 
-        <button type="submit" id="btnEnviar">🚀 ENVIAR PARA A CHEFIA</button>
-        <p id="statusEnvio" style="text-align:center; font-weight:bold; color:green; margin-top:15px;"></p>
-    </form>
+            <button type="submit" id="btnEnviar">🚀 REGISTRAR ENTRADA</button>
+            <p id="statusEnvio" style="text-align:center; font-weight:bold; color:green; margin-top:15px;"></p>
+        </form>
+    </div>
+
+    <!-- TELA 2: PÁTIO / SAÍDA -->
+    <div id="telaPatio" class="escondido">
+        <h3 style="text-align: center; color: #555;">Veículos no Pátio</h3>
+        <p style="text-align: center; font-size: 14px; color: #777;">Os dados do pátio aparecerão aqui.</p>
+        
+        <!-- Exemplo de como ficará um veículo no pátio -->
+        <div id="listaPatio">
+            <div class="card-veiculo">
+                <strong>Empresa:</strong> Transportadora XYZ<br>
+                <strong>Motorista:</strong> João Silva<br>
+                <strong>Entrada:</strong> 14:30 - P2<br>
+                <button class="btn-saida" onclick="alert('Função de saída será ativada na próxima etapa!')">Registrar Saída Agora</button>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
     const urlApp = "https://script.google.com/macros/s/AKfycbwTO-g1IoAk9KD8sO4t3aIxOl6KUhYJwyjIsYZsXxqnGNX7iT2XwwEEW90UISsjqDmG/exec";
 
-    function liberarApp() {
-        document.getElementById('travaSeguranca').classList.add('escondido');
-        document.getElementById('formRomaneio').classList.remove('escondido');
-        capturarGPS();
-        atualizarPainelOffline();
-    }
-
-    function capturarGPS() {
+    function solicitarGPS() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     document.getElementById('localizacao').value = position.coords.latitude + ", " + position.coords.longitude;
+                    document.getElementById('travaSeguranca').classList.add('escondido');
+                    document.getElementById('telaEntrada').classList.remove('escondido');
+                    atualizarPainelOffline();
                 },
-                () => alert("Libera o GPS aí! O sistema precisa da localização.")
+                (error) => {
+                    alert("Para a realização do romaneio é necessário que a localização seja habilitada. Infelizmente, só é possível prosseguir com a localização ativada.");
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
+        } else {
+            alert("Seu dispositivo não suporta GPS.");
         }
     }
 
-    function processarFormulario(event) {
+    function mudarAba(aba) {
+        document.getElementById('abaEntrada').classList.remove('ativa');
+        document.getElementById('abaPatio').classList.remove('ativa');
+        document.getElementById('telaEntrada').classList.add('escondido');
+        document.getElementById('telaPatio').classList.add('escondido');
+
+        if (aba === 'entrada') {
+            document.getElementById('abaEntrada').classList.add('ativa');
+            document.getElementById('telaEntrada').classList.remove('escondido');
+        } else {
+            document.getElementById('abaPatio').classList.add('ativa');
+            document.getElementById('telaPatio').classList.remove('escondido');
+        }
+    }
+
+    function processarFormulario(event, tipoRegistro) {
         event.preventDefault();
         
+        const form = document.getElementById('formRomaneio');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
         const hoje = new Date();
         const romaneio = {
+            tipoRegistro: tipoRegistro,
             empresa: document.getElementById('empresa').value,
             portaria: document.getElementById('portaria').value,
             tipoVeiculo: document.getElementById('tipoVeiculo').value,
             motorista: document.getElementById('motorista').value,
             localizacao: document.getElementById('localizacao').value,
             vigia: "Daniel",
-            dataEntrada: hoje.toLocaleDateString('pt-BR'),
-            horaEntrada: hoje.toLocaleTimeString('pt-BR')
+            dataAtual: hoje.toLocaleDateString('pt-BR'),
+            horaAtual: hoje.toLocaleTimeString('pt-BR')
         };
 
         if (navigator.onLine) {
@@ -118,13 +177,14 @@
         fetch(urlApp, { method: 'POST', body: dados })
         .then(() => {
             if(limparFormulario) {
-                document.getElementById('statusEnvio').innerText = "Romaneio na mesa do Diego! ✅";
-                document.getElementById('btnEnviar').innerText = "🚀 ENVIAR PARA A CHEFIA";
+                document.getElementById('statusEnvio').innerText = "Entrada registrada com sucesso! ✅";
+                document.getElementById('btnEnviar').innerText = "🚀 REGISTRAR ENTRADA";
                 document.getElementById('btnEnviar').disabled = false;
                 document.getElementById('formRomaneio').reset();
+                setTimeout(() => document.getElementById('statusEnvio').innerText = "", 3000);
             }
         })
-        .catch(() => salvarOffline(romaneio)); // Se der erro no fetch, salva no celular
+        .catch(() => salvarOffline(romaneio));
     }
 
     function salvarOffline(romaneio) {
@@ -133,13 +193,39 @@
         localStorage.setItem('romaneiosPendentes', JSON.stringify(fila));
         
         document.getElementById('statusEnvio').innerText = "Sem sinal! Salvo no celular. 📱";
-        document.getElementById('btnEnviar').innerText = "🚀 ENVIAR PARA A CHEFIA";
+        document.getElementById('btnEnviar').innerText = "🚀 REGISTRAR ENTRADA";
         document.getElementById('btnEnviar').disabled = false;
         document.getElementById('formRomaneio').reset();
         atualizarPainelOffline();
     }
 
     function sincronizarPendentes() {
+        let fila = JSON.parse(localStorage.getItem('romaneiosPendentes')) || [];
+        if (fila.length > 0) {
+            fila.forEach(romaneio => enviarProGoogle(romaneio, false));
+            localStorage.removeItem('romaneiosPendentes');
+            atualizarPainelOffline();
+            document.getElementById('statusEnvio').innerText = "Sinal voltou! Dados sincronizados. 🔄";
+        }
+    }
+
+    function atualizarPainelOffline() {
+        let fila = JSON.parse(localStorage.getItem('romaneiosPendentes')) || [];
+        const aviso = document.getElementById('avisoOffline');
+        if (fila.length > 0 || !navigator.onLine) {
+            aviso.classList.remove('escondido');
+            document.getElementById('contadorOffline').innerText = fila.length;
+        } else {
+            aviso.classList.add('escondido');
+        }
+    }
+
+    window.addEventListener('online', sincronizarPendentes);
+    window.addEventListener('offline', atualizarPainelOffline);
+</script>
+
+</body>
+</html>
         let fila = JSON.parse(localStorage.getItem('romaneiosPendentes')) || [];
         if (fila.length > 0) {
             fila.forEach(romaneio => enviarProGoogle(romaneio, false));
