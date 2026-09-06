@@ -1,4 +1,12 @@
-<!DOCTYPE html>
+        const form = document.getElementById('formRomaneio');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const hoje = new Date();
+        const romaneio = {
+            tipoRegistro: tipoRegistro,<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -149,6 +157,84 @@
         const hoje = new Date();
         const romaneio = {
             tipoRegistro: tipoRegistro,
+            empresa: document.getElementById('empresa').value,
+            portaria: document.getElementById('portaria').value,
+            tipoVeiculo: document.getElementById('tipoVeiculo').value,
+            motorista: document.getElementById('motorista').value,
+            localizacao: document.getElementById('localizacao').value,
+            vigia: "Daniel",
+            dataAtual: hoje.toLocaleDateString('pt-BR'),
+            horaAtual: hoje.toLocaleTimeString('pt-BR')
+        };
+
+        if (navigator.onLine) {
+            enviarProGoogle(romaneio, true);
+        } else {
+            salvarOffline(romaneio);
+        }
+    }
+
+    function enviarProGoogle(romaneio, limparFormulario) {
+        if(limparFormulario) {
+            document.getElementById('btnEnviar').innerText = "Enviando... ⏳";
+            document.getElementById('btnEnviar').disabled = true;
+        }
+
+        const dados = new URLSearchParams(romaneio);
+
+        fetch(urlApp, { method: 'POST', body: dados })
+        .then(() => {
+            if(limparFormulario) {
+                document.getElementById('statusEnvio').innerText = "Entrada registrada com sucesso! ✅";
+                document.getElementById('btnEnviar').innerText = "🚀 REGISTRAR ENTRADA";
+                document.getElementById('btnEnviar').disabled = false;
+                document.getElementById('formRomaneio').reset();
+                setTimeout(() => document.getElementById('statusEnvio').innerText = "", 3000);
+            }
+        })
+        .catch(() => salvarOffline(romaneio));
+    }
+
+    function salvarOffline(romaneio) {
+        let fila = JSON.parse(localStorage.getItem('romaneiosPendentes')) || [];
+        fila.push(romaneio);
+        localStorage.setItem('romaneiosPendentes', JSON.stringify(fila));
+        
+        document.getElementById('statusEnvio').innerText = "Sem sinal! Salvo no celular. 📱";
+        document.getElementById('btnEnviar').innerText = "🚀 REGISTRAR ENTRADA";
+        document.getElementById('btnEnviar').disabled = false;
+        document.getElementById('formRomaneio').reset();
+        atualizarPainelOffline();
+    }
+
+    function sincronizarPendentes() {
+        let fila = JSON.parse(localStorage.getItem('romaneiosPendentes')) || [];
+        if (fila.length > 0) {
+            fila.forEach(romaneio => enviarProGoogle(romaneio, false));
+            localStorage.removeItem('romaneiosPendentes');
+            atualizarPainelOffline();
+            document.getElementById('statusEnvio').innerText = "Sinal voltou! Dados sincronizados. 🔄";
+        }
+    }
+
+    function atualizarPainelOffline() {
+        let fila = JSON.parse(localStorage.getItem('romaneiosPendentes')) || [];
+        const aviso = document.getElementById('avisoOffline');
+        if (fila.length > 0 || !navigator.onLine) {
+            aviso.classList.remove('escondido');
+            document.getElementById('contadorOffline').innerText = fila.length;
+        } else {
+            aviso.classList.add('escondido');
+        }
+    }
+
+    window.addEventListener('online', sincronizarPendentes);
+    window.addEventListener('offline', atualizarPainelOffline);
+</script>
+
+</body>
+</html>
+
             empresa: document.getElementById('empresa').value,
             portaria: document.getElementById('portaria').value,
             tipoVeiculo: document.getElementById('tipoVeiculo').value,
