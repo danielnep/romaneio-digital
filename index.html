@@ -3,398 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Romaneio Digital PRO</title>
+    <title>Romaneio PRO</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
-        :root { --azul: #0056b3; --verde: #198754; --vermelho: #dc3545; --fundo: #f0f2f5; --texto: #333; }
-        body { font-family: 'Poppins', sans-serif; background-color: var(--fundo); margin: 0; padding: 15px; color: var(--texto); }
-        .app-container { background: white; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 25px; max-width: 500px; margin: 0 auto; overflow: hidden; }
-        
-        h2 { text-align: center; color: var(--azul); font-weight: 700; margin-top: 0; font-size: 24px; }
-        .subtitulo { text-align: center; font-size: 14px; color: #666; margin-bottom: 15px; }
-
-        /* Dashboard Otimizado */
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #e9ecef; padding: 15px; border-radius: 12px; margin-bottom: 25px; text-align: center; border: 1px solid #dee2e6; }
-        .dash-item { padding: 10px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .dash-item.destaque { grid-column: span 2; background: #fff3cd; border: 1px solid #ffeeba; }
-        .dash-valor { font-size: 24px; font-weight: 700; color: var(--azul); }
-        .dash-valor.pendente { color: var(--vermelho); font-size: 28px; }
-        .dash-titulo { font-size: 11px; font-weight: 600; color: #555; text-transform: uppercase; margin-top: 5px; }
-
-        .tela { display: none; opacity: 0; transform: translateY(20px); transition: all 0.4s ease; }
-        .tela.ativa { display: block; opacity: 1; transform: translateY(0); }
-
-        button { width: 100%; padding: 16px; font-size: 16px; font-weight: 600; font-family: 'Poppins', sans-serif; border: none; border-radius: 12px; margin-bottom: 15px; cursor: pointer; color: white; }
-        .btn-primario { background: linear-gradient(135deg, #007bff, #0056b3); }
-        .btn-sucesso { background: linear-gradient(135deg, #20c997, #198754); }
-        .btn-alerta { background: linear-gradient(135deg, #ffc107, #fd7e14); color: #000; }
-        .btn-ocr { background: linear-gradient(135deg, #6f42c1, #512da8); margin-top: 5px; }
-
-        .caixa-seguranca { border: 2px solid var(--vermelho); background-color: #fff5f5; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px; }
-        .caixa-seguranca h3 { color: var(--vermelho); margin-top: 0; font-size: 20px; }
-        
-        label { font-weight: 600; display: block; margin-top: 15px; margin-bottom: 5px; font-size: 14px; }
-        input, select, textarea { width: 100%; padding: 14px; border: 2px solid #e1e5eb; border-radius: 10px; box-sizing: border-box; font-size: 15px; font-family: 'Poppins', sans-serif; background-color: #fafbfc; }
+        :root { --azul: #0056b3; --vermelho: #dc3545; --verde: #198754; }
+        body { font-family: 'Poppins', sans-serif; background: #f0f2f5; padding: 15px; margin: 0; }
+        .app-container { background: white; border-radius: 16px; padding: 25px; max-width: 500px; margin: 0 auto; }
+        h2 { text-align: center; color: var(--azul); margin-top: 0; }
+        label { font-weight: 600; display: block; margin-top: 15px; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; font-family: 'Poppins'; }
+        button { width: 100%; padding: 15px; font-weight: bold; border: none; border-radius: 8px; margin-top: 15px; color: white; cursor: pointer; }
+        .btn-ocr { background: #6f42c1; } .btn-sucesso { background: var(--verde); } .btn-alerta { background: #ffc107; color: #000; }
+        .tela { display: none; } .tela.ativa { display: block; }
+        #resultadoOcr { font-size: 12px; background: #eee; padding: 10px; display: none; border-radius: 5px; margin-top: 5px; }
         .escondido { display: none !important; }
-
-        .card-veiculo { border: 1px solid #ccc; padding: 15px; border-radius: 10px; margin-bottom: 15px; background: #fff; border-left: 5px solid var(--vermelho); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        
-        #resultadoOcr { font-size: 13px; color: #555; background: #f8f9fa; border: 1px dashed #ccc; padding: 10px; border-radius: 8px; margin-top: 10px; display: none; }
-        .input-arquivo { display: none; }
+        .card-veiculo { border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 5px solid var(--azul); }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <h2>Vistoria Digital</h2>
-    <p class="subtitulo" id="statusConexao">Sistema Inteligente de Acesso</p>
+    <h2>Romaneio Digital PRO</h2>
 
-    <!-- TELA 1: INÍCIO E DASHBOARD -->
+    <!-- TELA 1: INÍCIO -->
     <div id="telaInicio" class="tela ativa">
-        <label style="text-align: center; font-size: 12px; margin-bottom: 5px;">Selecione sua portaria para ver o painel:</label>
-        <select id="portariaPainel" onchange="atualizarDashboard()" style="margin-bottom: 15px; border-color: var(--azul);">
+        <label>Sua Portaria:</label>
+        <select id="portariaPainel">
             <option value="P1">Portaria 1</option>
             <option value="P2">Portaria 2</option>
             <option value="P3">Portaria 3</option>
             <option value="Tanques">Tanques</option>
         </select>
-
-        <div class="dashboard">
-            <div class="dash-item destaque">
-                <div class="dash-valor pendente" id="dashPendentes">0</div>
-                <div class="dash-titulo">Aguardando Saída (Nesta Portaria)</div>
-            </div>
-            <div class="dash-item">
-                <div class="dash-valor" id="dashEntradas">0</div>
-                <div class="dash-titulo">Suas Entradas (Hoje)</div>
-            </div>
-            <div class="dash-item">
-                <div class="dash-valor" id="dashSaidas">0</div>
-                <div class="dash-titulo">Suas Saídas (Hoje)</div>
-            </div>
-        </div>
-
-        <button class="btn-primario" onclick="iniciarEntrada()">📥 REGISTRAR NOVA ENTRADA</button>
-        <button class="btn-alerta" onclick="abrirSaida()">🚛 VER VEÍCULOS AGUARDANDO SAÍDA</button>
+        <button class="btn-sucesso" onclick="mostrarTela('telaEntrada'); pegarGPS();">📥 REGISTRAR ENTRADA</button>
+        <button class="btn-alerta" onclick="abrirSaida()">🚛 VER VEÍCULOS (DAR SAÍDA)</button>
     </div>
 
-    <!-- TELA 2: SEGURANÇA -->
-    <div id="telaSeguranca" class="tela">
-        <div class="caixa-seguranca">
-            <h3>⚠️ OBRIGATÓRIO</h3>
-            <p><strong>O caminhão está TOTALMENTE imobilizado, calçado e com o motor desligado?</strong></p>
-            <p style="font-size: 13px;">(Caso seja um carro, garanta que o freio de mão esteja puxado).</p>
-        </div>
-        <button class="btn-sucesso" onclick="confirmarSeguranca()">✅ SIM, PROSSEGUIR PARA ROMANEIO</button>
-        <button class="btn-alerta" style="background: #ccc; color: #333;" onclick="voltarInicio()">Voltar</button>
-    </div>
-
-    <!-- TELA 3: FORMULÁRIO DE ENTRADA -->
+    <!-- TELA 2: ENTRADA -->
     <div id="telaEntrada" class="tela">
-        <h3 style="text-align: center; color: var(--azul);">Nova Entrada</h3>
         
+        <!-- OCR BOTOES -->
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button type="button" class="btn-ocr" onclick="document.getElementById('capturaDoc').click()">📸 LER DOC (RG/CNH)</button>
+            <button type="button" class="btn-ocr" onclick="document.getElementById('capturaPlaca').click()">📸 LER PLACA</button>
+        </div>
+        <input type="file" id="capturaDoc" accept="image/*" capture="environment" style="display:none" onchange="lerOcr(event, 'doc')">
+        <input type="file" id="capturaPlaca" accept="image/*" capture="environment" style="display:none" onchange="lerOcr(event, 'placa')">
+        <div id="resultadoOcr"></div>
+
         <form id="formEntrada">
-            <label>Observações Iniciais</label>
-            <textarea id="obsIniciais" rows="2" placeholder="Algo a declarar antes de começar?"></textarea>
+            <label>Empresa</label>
+            <input type="text" id="empresa" required>
 
-            <label>📄 Extrair Dados do Documento</label>
-            <button type="button" class="btn-ocr" onclick="document.getElementById('capturaDoc').click()">📸 LER COM A CÂMERA (OCR)</button>
-            <input type="file" id="capturaDoc" class="input-arquivo" accept="image/*" capture="environment" onchange="processarOcr(event)">
-            <div id="resultadoOcr">Aguardando imagem...</div>
-
-            <label>Empresa *</label>
-            <input type="text" id="empresa" placeholder="Ex: Transportadora XYZ" required>
-
-            <label>Tipo de Veículo *</label>
-            <select id="tipoVeiculo" required>
-                <option value="" disabled selected>Selecione...</option>
-                <option value="Carro">Carro / Utilitário</option>
-                <option value="Caminhao">Caminhão / Carreta</option>
+            <label>Tipo de Veículo</label>
+            <select id="tipoVeiculo" required onchange="ajustarPlacas()">
+                <option value="Pequeno">Pequeno</option>
+                <option value="Carreta/Caminhão" selected>Carreta / Caminhão</option>
             </select>
 
-            <label>Motorista *</label>
-            <input type="text" id="motorista" placeholder="Nome do condutor" required>
+            <label id="lblCavalo">Placa Cavalo</label>
+            <input type="text" id="placaCavalo" style="text-transform:uppercase;">
+            
+            <label>Placa Baú / Única *</label>
+            <input type="text" id="placaBau" required style="text-transform:uppercase;">
 
-            <label>Resultado da Vistoria *</label>
-            <select id="statusVistoria" required onchange="toggleVistoria()">
-                <option value="" disabled selected>Selecione...</option>
-                <option value="Tudo OK">Tudo OK (Aprovado)</option>
-                <option value="Irregularidade">Encontrei algo</option>
-            </select>
-            <input type="text" id="detalheVistoria" class="escondido" placeholder="O que você encontrou? Especifique.">
+            <label>Motorista</label>
+            <input type="text" id="motorista" required>
+            
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1"><label>RG</label><input type="text" id="rg"></div>
+                <div style="flex:1"><label>CNH</label><input type="text" id="cnh"></div>
+            </div>
 
-            <label>Localização GPS</label>
-            <input type="text" id="localizacao" placeholder="Capturado via Satélite" readonly required>
+            <label>GPS (Automático)</label>
+            <input type="text" id="localizacao" readonly required>
 
-            <button type="submit" class="btn-sucesso" id="btnEnviar" onclick="processarEntrada(event)" style="margin-top: 25px;">🚀 REGISTRAR ENTRADA</button>
-            <button type="button" class="btn-alerta" style="background: #ccc; color: #333;" onclick="voltarInicio()">Cancelar</button>
+            <label>Observações / Vistoria</label>
+            <textarea id="observacoes"></textarea>
+
+            <!-- CANVAS / SELFIE -->
+            <label>📸 MUGSHOT (Selfie c/ Plaquinha) *</label>
+            <button type="button" style="background:#333; margin-top:0;" onclick="document.getElementById('capturaSelfie').click()">📷 BATER FOTO DO MOTORISTA</button>
+            <input type="file" id="capturaSelfie" accept="image/*" capture="user" style="display:none" onchange="gerarCarimbo(event)">
+            
+            <img id="previewCarimbo" style="width:100%; border-radius:10px; margin-top:10px; display:none;">
+            <input type="hidden" id="fotoCarimbadaBase64" required>
+            <canvas id="canvasCarimbo" style="display:none;"></canvas>
+
+            <button type="submit" class="btn-sucesso" id="btnEnviar" onclick="processarEntrada(event)">🚀 SALVAR ENTRADA</button>
+            <button type="button" class="btn-alerta" style="background:#ccc" onclick="voltar()">Cancelar</button>
         </form>
     </div>
 
-    <!-- TELA 4: LISTA DE SAÍDA -->
+    <!-- TELA 3: SAÍDAS -->
     <div id="telaSaida" class="tela">
-        <h3 style="text-align: center; color: var(--vermelho);">Aguardando Saída</h3>
-        
-        <p style="text-align: center; font-size: 14px; margin-bottom: 20px;">Mostrando veículos da portaria: <strong id="nomePortariaSaida"></strong></p>
-
-        <div id="listaCaminhoesSaida">
-            <!-- Os cartões caem aqui -->
-        </div>
-
-        <button type="button" class="btn-alerta" style="background: #ccc; color: #333; margin-top: 20px;" onclick="voltarInicio()">Voltar ao Início</button>
+        <h3 style="text-align: center;">Dar Saída</h3>
+        <div id="listaSaida"></div>
+        <button type="button" style="background:#ccc; color:#000;" onclick="voltar()">Voltar</button>
     </div>
 </div>
 
 <script>
-    const urlApp = "https://script.google.com/macros/s/AKfycbwTO-g1IoAk9KD8sO4t3aIxOl6KUhYJwyjIsYZsXxqnGNX7iT2XwwEEW90UISsjqDmG/exec";
+    const urlApp = "SUA_URL_DO_APP_SCRIPT_AQUI"; 
 
-    window.onload = () => {
-        verificarDataDashboard();
-        atualizarDashboard();
-        window.addEventListener('online', tentarDescarregarOffline);
-    };
+    function mostrarTela(t) { document.querySelectorAll('.tela').forEach(el => el.classList.remove('ativa')); document.getElementById(t).classList.add('ativa'); }
+    function voltar() { document.getElementById('formEntrada').reset(); document.getElementById('previewCarimbo').style.display='none'; mostrarTela('telaInicio'); }
 
-    function verificarDataDashboard() {
-        const hoje = new Date().toLocaleDateString('pt-BR');
-        const dataSalva = localStorage.getItem('dataDash');
-        if(dataSalva !== hoje) {
-            localStorage.setItem('dataDash', hoje);
-            localStorage.setItem('contEntrada', '0');
-            localStorage.setItem('contSaida', '0');
+    function ajustarPlacas() {
+        const t = document.getElementById('tipoVeiculo').value;
+        const c = document.getElementById('placaCavalo'); const l = document.getElementById('lblCavalo');
+        if(t === 'Pequeno') { c.classList.add('escondido'); l.classList.add('escondido'); c.value = ""; } 
+        else { c.classList.remove('escondido'); l.classList.remove('escondido'); }
+    }
+
+    function pegarGPS() {
+        if(navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(p => document.getElementById('localizacao').value = p.coords.latitude + ", " + p.coords.longitude);
         }
     }
 
-    function atualizarDashboard() {
-        // Atualiza contadores diários (Gerais)
-        document.getElementById('dashEntradas').innerText = localStorage.getItem('contEntrada') || '0';
-        document.getElementById('dashSaidas').innerText = localStorage.getItem('contSaida') || '0';
-        
-        // Atualiza contagem de pendentes específicos da portaria selecionada
-        const portariaSel = document.getElementById('portariaPainel').value;
-        const aguardando = JSON.parse(localStorage.getItem('aguardandoSaida')) || [];
-        const pendentesLocal = aguardando.filter(c => c.portaria === portariaSel).length;
-        document.getElementById('dashPendentes').innerText = pendentesLocal;
-    }
-
-    function mostrarTela(idTela) {
-        document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
-        document.getElementById(idTela).classList.add('ativa');
-    }
-
-    function iniciarEntrada() { mostrarTela('telaSeguranca'); }
-    
-    function voltarInicio() { 
-        document.getElementById('formEntrada').reset(); 
-        atualizarDashboard();
-        mostrarTela('telaInicio'); 
-    }
-
-    function confirmarSeguranca() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    document.getElementById('localizacao').value = pos.coords.latitude + ", " + pos.coords.longitude;
-                    mostrarTela('telaEntrada');
-                },
-                () => alert("Ative a localização para prosseguir."),
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
-        }
-    }
-
-    function toggleVistoria() {
-        const status = document.getElementById('statusVistoria').value;
-        const detalhe = document.getElementById('detalheVistoria');
-        if(status === 'Irregularidade') {
-            detalhe.classList.remove('escondido');
-            detalhe.required = true;
-        } else {
-            detalhe.classList.add('escondido');
-            detalhe.required = false;
-            detalhe.value = '';
-        }
-    }
-
-    async function processarOcr(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const divOcr = document.getElementById('resultadoOcr');
-        divOcr.style.display = 'block';
-        divOcr.innerHTML = '<strong>⏳ Analisando imagem...</strong>';
+    async function lerOcr(e, tipo) {
+        const file = e.target.files[0]; if(!file) return;
+        const div = document.getElementById('resultadoOcr'); div.style.display='block'; div.innerHTML = '⏳ Lendo imagem...';
         try {
-            const worker = await Tesseract.createWorker('por');
-            const ret = await worker.recognize(file);
-            divOcr.innerHTML = '<strong>Texto Extraído:</strong><br>' + ret.data.text.replace(/\n/g, '<br>');
-            await worker.terminate();
-        } catch (erro) {
-            divOcr.innerHTML = '❌ Falha na leitura.';
-        }
+            const w = await Tesseract.createWorker('por'); const ret = await w.recognize(file); const txt = ret.data.text.toUpperCase();
+            
+            if(tipo === 'placa') {
+                const p = txt.match(/[A-Z]{3}[- ]?[0-9][A-Z0-9][0-9]{2}/);
+                if(p) { document.getElementById('placaBau').value = p[0].replace(' ','-'); div.innerHTML='✅ Placa capturada!'; }
+                else div.innerHTML='⚠️ Placa não reconhecida.';
+            } else {
+                const rg = txt.match(/\d{2}\.?\d{3}\.?\d{3}-?[0-9X]/);
+                const cnh = txt.match(/\b\d{11}\b/);
+                if(rg) document.getElementById('rg').value = rg[0];
+                if(cnh) document.getElementById('cnh').value = cnh[0];
+                div.innerHTML='✅ Documento lido! Revise os campos.';
+            }
+            await w.terminate(); setTimeout(() => div.style.display='none', 4000);
+        } catch(err) { div.innerHTML = '❌ Erro no OCR.'; }
     }
 
-    function processarEntrada(event) {
-        event.preventDefault();
-        const form = document.getElementById('formEntrada');
-        if (!form.checkValidity()) { form.reportValidity(); return; }
+    function gerarCarimbo(e) {
+        const f = e.target.files[0]; if(!f) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.getElementById('canvasCarimbo'); const ctx = canvas.getContext('2d');
+                const scale = 800 / img.width; canvas.width = 800; canvas.height = img.height * scale;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, canvas.height - 240, canvas.width, 240);
+                ctx.fillStyle = "#FFF"; ctx.textAlign = "left"; ctx.font = "bold 18px Arial";
+                
+                let y = canvas.height - 210;
+                ctx.fillText(`EU, ${document.getElementById('motorista').value.toUpperCase()}, CONFIRMO ESTE ROMANEIO DIGITAL.`, 20, y);
+                ctx.font = "16px Arial"; y+=30;
+                ctx.fillText(`EMPRESA: ${document.getElementById('empresa').value.toUpperCase()} | PORTARIA: ${document.getElementById('portariaPainel').value}`, 20, y); y+=30;
+                ctx.fillText(`VEÍCULO: ${document.getElementById('tipoVeiculo').value.toUpperCase()} | PLACA BAÚ: ${document.getElementById('placaBau').value.toUpperCase()} | CAVALO: ${document.getElementById('placaCavalo').value.toUpperCase()}`, 20, y); y+=30;
+                ctx.fillText(`RG: ${document.getElementById('rg').value} | CNH: ${document.getElementById('cnh').value}`, 20, y); y+=30;
+                ctx.fillText(`GPS: ${document.getElementById('localizacao').value}`, 20, y); y+=30;
+                ctx.fillText(`DATA/HORA: ${new Date().toLocaleDateString('pt-BR')} - ${new Date().toLocaleTimeString('pt-BR')}`, 20, y);
+                
+                const b64 = canvas.toDataURL('image/jpeg', 0.6);
+                document.getElementById('fotoCarimbadaBase64').value = b64;
+                document.getElementById('previewCarimbo').src = b64;
+                document.getElementById('previewCarimbo').style.display = 'block';
+            }; img.src = ev.target.result;
+        }; reader.readAsDataURL(f);
+    }
 
-        document.getElementById('btnEnviar').innerText = "ENVIANDO... ⏳";
-        document.getElementById('btnEnviar').disabled = true;
-
-        let obsFinais = document.getElementById('obsIniciais').value;
-        if(document.getElementById('statusVistoria').value === 'Irregularidade') {
-            obsFinais += " | VISTORIA: " + document.getElementById('detalheVistoria').value;
-        }
+    function processarEntrada(e) {
+        e.preventDefault(); if(!document.getElementById('formEntrada').checkValidity()) { document.getElementById('formEntrada').reportValidity(); return; }
         
-        let vEmpresa = document.getElementById('empresa').value.trim();
-        let vMotorista = document.getElementById('motorista').value.trim();
-        if (vEmpresa.length <= 2 || vMotorista.length <= 2) { obsFinais += " | * "; }
-
-        const horaAgora = new Date().toLocaleTimeString('pt-BR');
-        const dataAgora = new Date().toLocaleDateString('pt-BR');
-        const portariaAtual = document.getElementById('portariaPainel').value; // Puxa do dropdown da tela inicial
-
-        const objRomaneio = {
-            idLocal: Date.now().toString(), 
-            tipoRegistro: "Entrada",
-            empresa: vEmpresa,
-            portaria: portariaAtual,
+        document.getElementById('btnEnviar').innerText = "⏳ ENVIANDO..."; document.getElementById('btnEnviar').disabled = true;
+        
+        const obj = {
+            idLocal: Date.now().toString(), tipoRegistro: "Entrada",
+            portaria: document.getElementById('portariaPainel').value,
+            empresa: document.getElementById('empresa').value,
             tipoVeiculo: document.getElementById('tipoVeiculo').value,
-            motorista: vMotorista,
+            placaCavalo: document.getElementById('placaCavalo').value,
+            placaBau: document.getElementById('placaBau').value,
+            motorista: document.getElementById('motorista').value,
+            rg: document.getElementById('rg').value, cnh: document.getElementById('cnh').value,
             localizacao: document.getElementById('localizacao').value,
-            vigia: "Daniel",
-            observacoes: obsFinais || "OK",
-            dataAtual: dataAgora,
-            horaAtual: horaAgora
+            observacoes: document.getElementById('observacoes').value,
+            fotoValidacao: document.getElementById('fotoCarimbadaBase64').value,
+            dataAtual: new Date().toLocaleDateString('pt-BR'), horaAtual: new Date().toLocaleTimeString('pt-BR')
         };
 
-        // Salva na lista de Aguardando Saída
-        let aguardando = JSON.parse(localStorage.getItem('aguardandoSaida')) || [];
-        aguardando.push(objRomaneio);
-        localStorage.setItem('aguardandoSaida', JSON.stringify(aguardando));
+        let aq = JSON.parse(localStorage.getItem('filaPátio')) || [];
+        aq.push(obj); localStorage.setItem('filaPátio', JSON.stringify(aq));
 
-        // Atualiza Dashboard Local
-        let cont = parseInt(localStorage.getItem('contEntrada') || '0');
-        localStorage.setItem('contEntrada', cont + 1);
-
-        enviarDados(objRomaneio, "Entrada");
+        fetch(urlApp, { method: 'POST', body: new URLSearchParams(obj) })
+        .then(() => { alert("✅ Entrada na Planilha!"); document.getElementById('btnEnviar').disabled = false; document.getElementById('btnEnviar').innerText = "🚀 SALVAR ENTRADA"; voltar(); })
+        .catch(() => alert("Salvou offline!"));
     }
 
     function abrirSaida() {
-        const portariaAtual = document.getElementById('portariaPainel').value;
-        document.getElementById('nomePortariaSaida').innerText = portariaAtual;
-        carregarAguardando();
+        const aq = JSON.parse(localStorage.getItem('filaPátio')) || [];
+        const port = document.getElementById('portariaPainel').value;
+        const lista = document.getElementById('listaSaida'); lista.innerHTML = '';
+        
+        const filt = aq.filter(x => x.portaria === port);
+        if(filt.length === 0) { lista.innerHTML = '<p>Nenhum caminhão no pátio.</p>'; }
+        
+        filt.forEach(c => {
+            lista.innerHTML += `<div class="card-veiculo">
+                <strong>${c.empresa}</strong><br>Mot: ${c.motorista} | Baú: ${c.placaBau}<br>Entrou: ${c.horaAtual}<br>
+                <button class="btn-sucesso" onclick="registrarSaida('${c.idLocal}')">✅ REGISTRAR SAÍDA</button>
+            </div>`;
+        });
         mostrarTela('telaSaida');
     }
 
-    function carregarAguardando() {
-        const portariaSel = document.getElementById('portariaPainel').value;
-        const aguardando = JSON.parse(localStorage.getItem('aguardandoSaida')) || [];
-        const lista = document.getElementById('listaCaminhoesSaida');
+    function registrarSaida(id) {
+        let aq = JSON.parse(localStorage.getItem('filaPátio')) || [];
+        const dataSaida = new Date().toLocaleDateString('pt-BR');
+        const horaSaida = new Date().toLocaleTimeString('pt-BR');
         
-        const filtrados = aguardando.filter(c => c.portaria === portariaSel);
+        const obj = { idLocal: id, tipoRegistro: "Saida", dataAtual: dataSaida, horaAtual: horaSaida };
+        localStorage.setItem('filaPátio', JSON.stringify(aq.filter(x => x.idLocal !== id)));
         
-        if(filtrados.length === 0) {
-            lista.innerHTML = '<p style="text-align:center; color:#666;">Nenhum veículo pendente nesta portaria.</p>';
-            return;
-        }
-
-        lista.innerHTML = '';
-        filtrados.forEach(c => {
-            lista.innerHTML += `
-                <div class="card-veiculo">
-                    <strong style="font-size:18px; color:var(--azul);">${c.empresa}</strong><br>
-                    <strong>Mot:</strong> ${c.motorista}<br>
-                    <small>Entrou às: ${c.horaAtual}</small><br>
-                    <button class="btn-sucesso" style="margin-top:15px; margin-bottom:0;" onclick="darSaida('${c.idLocal}')">✅ REGISTRAR SAÍDA</button>
-                </div>
-            `;
-        });
-    }
-
-    function darSaida(idLocal) {
-        if (!navigator.geolocation) { alert("GPS indisponível."); return; }
-        
-        navigator.geolocation.getCurrentPosition((pos) => {
-            const locSaida = pos.coords.latitude + ", " + pos.coords.longitude;
-            
-            let aguardando = JSON.parse(localStorage.getItem('aguardandoSaida')) || [];
-            const caminhao = aguardando.find(c => c.idLocal === idLocal);
-            
-            if(!caminhao) return;
-
-            const objSaida = {
-                tipoRegistro: "Saida",
-                empresa: caminhao.empresa,
-                portaria: caminhao.portaria,
-                tipoVeiculo: caminhao.tipoVeiculo,
-                motorista: caminhao.motorista,
-                localizacao: locSaida, 
-                vigia: "Daniel",
-                observacoes: "REGISTRO DE SAÍDA",
-                dataAtual: new Date().toLocaleDateString('pt-BR'),
-                horaAtual: new Date().toLocaleTimeString('pt-BR')
-            };
-
-            // Remove da lista
-            aguardando = aguardando.filter(c => c.idLocal !== idLocal);
-            localStorage.setItem('aguardandoSaida', JSON.stringify(aguardando));
-
-            // Atualiza Dashboard
-            let cont = parseInt(localStorage.getItem('contSaida') || '0');
-            localStorage.setItem('contSaida', cont + 1);
-
-            carregarAguardando();
-            enviarDados(objSaida, "Saída");
-
-        }, () => alert("Ative o GPS para dar saída no veículo."), { enableHighAccuracy: true });
-    }
-
-    function enviarDados(obj, tipo) {
-        const dadosStr = new URLSearchParams(obj).toString();
-        
-        if(navigator.onLine) {
-            fetch(urlApp, { method: 'POST', body: dadosStr })
-            .then(() => {
-                if(tipo === "Entrada") {
-                    alert("✅ Entrada enviada para a chefia!");
-                    document.getElementById('btnEnviar').innerText = "🚀 REGISTRAR ENTRADA";
-                    document.getElementById('btnEnviar').disabled = false;
-                    voltarInicio();
-                } else {
-                    alert("✅ Saída registrada no painel do Diego!");
-                }
-            })
-            .catch(() => salvarOffline(dadosStr, tipo));
-        } else {
-            salvarOffline(dadosStr, tipo);
-        }
-    }
-
-    function salvarOffline(dadosStr, tipo) {
-        let fila = JSON.parse(localStorage.getItem('filaRomaneios')) || [];
-        fila.push(dadosStr);
-        localStorage.setItem('filaRomaneios', JSON.stringify(fila));
-        
-        document.getElementById('statusConexao').innerText = `⚠️ Offline (${fila.length})`;
-        document.getElementById('statusConexao').style.color = '#dc3545';
-        
-        alert(`Sem sinal! A ${tipo} foi salva no aparelho e subirá quando a internet voltar.`);
-        
-        if(tipo === "Entrada") {
-            document.getElementById('btnEnviar').innerText = "🚀 REGISTRAR ENTRADA";
-            document.getElementById('btnEnviar').disabled = false;
-            voltarInicio();
-        }
-    }
-
-    function tentarDescarregarOffline() {
-        let fila = JSON.parse(localStorage.getItem('filaRomaneios')) || [];
-        if(fila.length > 0) {
-            fila.forEach(d => fetch(urlApp, { method: 'POST', body: d }));
-            localStorage.removeItem('filaRomaneios');
-            document.getElementById('statusConexao').innerText = "Sistema Inteligente de Acesso";
-            document.getElementById('statusConexao').style.color = '#666';
-        }
+        fetch(urlApp, { method: 'POST', body: new URLSearchParams(obj) })
+        .then(() => { alert("✅ Saída cravada na mesma linha!"); abrirSaida(); });
     }
 </script>
 </body>
