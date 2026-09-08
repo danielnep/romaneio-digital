@@ -7,553 +7,432 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
-        :root { --azul: #0056b3; --verde: #198754; --vermelho: #dc3545; --fundo: #f0f2f5; --texto: #333; --alerta: #ffc107; }
+        /* TEMA PREMIUM: PRETO E DOURADO */
+        :root { --fundo: #121212; --card: #1e1e1e; --texto: #f0f2f5; --dourado: #d4af37; --dourado-hover: #b5952f; --alerta: #ffc107; --vermelho: #dc3545; --verde: #198754; }
         body { font-family: 'Poppins', sans-serif; background-color: var(--fundo); margin: 0; padding: 15px; color: var(--texto); }
-        .app-container { background: white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); padding: 20px; max-width: 500px; margin: 0 auto; position: relative; }
-        h2 { text-align: center; color: var(--azul); font-weight: 700; margin-top: 0; font-size: 22px; }
+        .app-container { background: var(--card); border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.5); padding: 20px; max-width: 500px; margin: 0 auto; border: 1px solid #333; position: relative; }
+        
+        /* CABEÇALHO E ASSINATURA */
+        .header-app { text-align: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        h2 { color: var(--dourado); font-weight: 700; margin: 0; font-size: 24px; letter-spacing: 1px; }
+        .assinatura { font-size: 11px; color: #888; font-style: italic; margin-top: -2px; }
+        .relogio { font-size: 14px; font-weight: 600; color: var(--dourado); margin-top: 5px; }
         
         .tela { display: none; } .tela.ativa { display: block; }
+        .passo-wizard { display: none; } .passo-wizard.ativo { display: block; }
         
-        button { width: 100%; padding: 15px; font-size: 15px; font-weight: 600; font-family: 'Poppins'; border: none; border-radius: 8px; margin-bottom: 12px; cursor: pointer; color: white; }
-        .btn-primario { background: #0056b3; } .btn-sucesso { background: #198754; } .btn-alerta { background: var(--alerta); color: #000; } .btn-ocr { background: #6f42c1; font-size: 13px; }
+        /* BARRA DE PROGRESSO */
+        .progress-container { width: 100%; background: #333; border-radius: 10px; margin-bottom: 20px; height: 8px; overflow: hidden; display: none; }
+        .progress-bar { height: 100%; background: var(--dourado); width: 33%; transition: width 0.3s ease; }
+
+        button { width: 100%; padding: 15px; font-size: 15px; font-weight: 700; font-family: 'Poppins'; border: none; border-radius: 8px; margin-bottom: 12px; cursor: pointer; text-transform: uppercase; color: #121212; transition: 0.2s; }
+        .btn-primario { background: var(--dourado); } .btn-primario:active { background: var(--dourado-hover); }
+        .btn-alerta { background: var(--alerta); } .btn-sucesso { background: var(--verde); color: #fff; }
+        .btn-ocr { background: #333; color: var(--dourado); border: 1px solid var(--dourado); font-size: 13px; }
+        .btn-secundario { background: #333; color: #fff; }
         
-        label { font-weight: 600; display: block; margin-top: 10px; font-size: 13px; }
-        input, select, textarea { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; font-family: 'Poppins'; }
+        label { font-weight: 600; display: block; margin-top: 15px; font-size: 13px; color: #aaa; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; font-size: 14px; font-family: 'Poppins'; background: #2a2a2a; color: #fff; }
+        input:focus, select:focus { border-color: var(--dourado); outline: none; }
         .flex-row { display: flex; gap: 10px; } .flex-row > div { flex: 1; }
         
-        .card-veiculo { border: 1px solid #ccc; padding: 12px; border-radius: 8px; margin-bottom: 10px; background: #fff; border-left: 5px solid var(--azul); }
+        .card-veiculo { border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 10px; background: #252525; border-left: 5px solid var(--dourado); }
         
-        /* CAIXA DE ALERTA DO CALÇO */
-        .box-calco { background: #fff3cd; border: 3px solid #ffecb5; border-radius: 10px; padding: 15px; margin-bottom: 15px; text-align: center; }
-        .box-calco h4 { color: #856404; margin: 0 0 10px 0; font-size: 16px; }
-        .box-calco p { font-size: 13px; color: #664d03; line-height: 1.5; margin-bottom: 15px; }
+        /* CAIXA DO CALÇO (SEGURANÇA) */
+        .box-calco { background: #2c2205; border: 2px solid var(--dourado); border-radius: 10px; padding: 15px; margin-bottom: 15px; text-align: center; }
+        .box-calco h4 { color: var(--dourado); margin: 0 0 10px 0; font-size: 16px; }
+        .box-calco p { font-size: 13px; color: #ccc; line-height: 1.5; margin-bottom: 15px; }
 
-        /* CORTINA DE BLOQUEIO TOTAL (ANTI-PÂNICO / TIMEOUT 60s) */
-        #overlayBloqueio {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.9); z-index: 9999;
-            display: none; flex-direction: column; justify-content: center; align-items: center;
-            color: white; text-align: center; padding: 20px; box-sizing: border-box;
-            touch-action: none; pointer-events: all;
-        }
-        .spinner { border: 6px solid #f3f3f3; border-top: 6px solid var(--verde); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        /* TELA DE RESUMO */
+        .box-resumo { background: #1a1a1a; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed var(--dourado); }
+        .box-resumo span { color: var(--dourado); font-weight: 700; }
+
+        /* CORTINA ANTI-PÂNICO (TIMEOUT) */
+        #overlayBloqueio { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.95); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; color: var(--dourado); text-align: center; padding: 20px; box-sizing: border-box; touch-action: none; pointer-events: all; }
+        .spinner { border: 5px solid #333; border-top: 5px solid var(--dourado); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #msgBloqueio { font-size: 16px; font-weight: 600; line-height: 1.5; }
+        #msgBloqueio { font-size: 15px; font-weight: 600; line-height: 1.5; color: #fff; }
     </style>
 </head>
 <body>
 
-<!-- OVERLAY GIGANTE DE CARREGAMENTO COM TIMEOUT DE SEGURANÇA -->
-<div id="overlayBloqueio">
-    <div class="spinner"></div>
-    <div id="msgBloqueio">AGUARDE ALGUNS SEGUNDOS...<br>PROCESSANDO DADOS.</div>
-</div>
+<div id="overlayBloqueio"><div class="spinner"></div><div id="msgBloqueio">AGUARDE...<br>PROCESSANDO DADOS.</div></div>
 
 <div class="app-container">
-    <h2>Vistoria Digital</h2>
+    <div class="header-app">
+        <h2>ROMANEIO PRO</h2>
+        <div class="assinatura">criado por Daniel Xavier</div>
+        <div class="relogio" id="relogioTopo">--:--:--</div>
+    </div>
     
     <!-- TELA 0: TRAVA DO GPS -->
     <div id="telaZero" class="tela ativa">
         <div style="text-align: center; margin: 30px 0;">
             <div style="font-size: 50px; margin-bottom: 10px;">📍</div>
-            <h3 style="color: var(--azul);">Acessando o Sistema...</h3>
-            <p style="font-size: 14px; color: #555; line-height: 1.6; padding: 0 10px;">
+            <h3 style="color: var(--dourado);">Acessando o Sistema...</h3>
+            <p style="font-size: 13px; color: #aaa; line-height: 1.6; padding: 0 10px;">
                 Por questões de segurança para os vigias, para os motoristas e para a própria Farmax, este sistema exige a permissão de acesso à sua localização.
             </p>
         </div>
-        <button class="btn-sucesso" onclick="solicitarGPS()" style="padding: 18px; font-size: 16px;">✅ PERMITIR LOCALIZAÇÃO</button>
+        <button class="btn-primario" onclick="solicitarGPS()">✅ PERMITIR LOCALIZAÇÃO</button>
     </div>
 
     <!-- TELA 1: INÍCIO -->
     <div id="telaInicio" class="tela">
         <label>Sua Portaria:</label>
-        <select id="portariaPainel" style="margin-bottom: 20px;">
-            <option value="P1">Portaria 1</option>
-            <option value="P2">Portaria 2</option>
-            <option value="P3">Portaria 3</option>
-            <option value="Tanques">Tanques</option>
+        <select id="portariaPainel" style="margin-bottom: 25px;">
+            <option value="P1">Portaria 1</option><option value="P2">Portaria 2</option>
+            <option value="P3">Portaria 3</option><option value="Tanques">Tanques</option>
         </select>
-        <button class="btn-sucesso" onclick="mostrarTela('telaEntrada')">📥 NOVA ENTRADA</button>
+        <input type="hidden" id="localizacao">
+        <button class="btn-primario" onclick="iniciarEntrada()">📥 NOVA ENTRADA</button>
         <button class="btn-alerta" onclick="abrirDocas()">🚛 VER DOCAS (DAR SAÍDA)</button>
     </div>
 
-    <!-- TELA 2: ENTRADA -->
+    <!-- TELA 2: ASSISTENTE DE ENTRADA (WIZARD) -->
     <div id="telaEntrada" class="tela">
-        <h3 style="text-align: center; color: var(--azul); margin-top: 0;">Nova Entrada</h3>
+        <div class="progress-container" id="barraProgressoBox"><div class="progress-bar" id="barraProgresso"></div></div>
         
-        <!-- TRAVA OBRIGATÓRIA DO CALÇO -->
-        <div class="box-calco">
-            <h4>⚠️ PARADA OBRIGATÓRIA</h4>
-            <p>O caminhão deve estar COMPLETAMENTE PARADO e com o CALÇO NAS RODAS posicionado.</p>
-            <label style="display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; font-size: 14px; color: #000;">
-                <input type="checkbox" id="chkCalco" style="width: 22px; height: 22px;" onchange="verificarCalco()"> 
-                <strong>☑️ CONFIRMO O CALÇO</strong>
-            </label>
-        </div>
+        <form id="formEntrada">
+            <!-- PASSO 1 -->
+            <div id="passo1" class="passo-wizard ativa">
+                <h3 style="color: var(--dourado); text-align: center;">1. Triagem</h3>
+                <label>📄 Leitura Inteligente (Recomendado)</label>
+                <div class="flex-row" style="margin-bottom: 15px;">
+                    <div><button type="button" class="btn-ocr" onclick="document.getElementById('capturaDoc').click()">📸 LER RG/CNH</button></div>
+                    <div><button type="button" class="btn-ocr" onclick="document.getElementById('capturaPlaca').click()">📸 LER PLACA</button></div>
+                </div>
+                <input type="file" id="capturaDoc" accept="image/*" capture="environment" style="display:none" onchange="processarOcr(event, 'doc')">
+                <input type="file" id="capturaPlaca" accept="image/*" capture="environment" style="display:none" onchange="processarOcr(event, 'placa')">
 
-        <div id="blocoFormulario" style="opacity: 0.4; pointer-events: none;">
-            <label>📄 Preenchimento Inteligente</label>
-            <div class="flex-row" style="margin-bottom: 15px;">
-                <div><button type="button" class="btn-ocr" onclick="document.getElementById('capturaDoc').click()">📸 LER RG/CNH</button></div>
-                <div><button type="button" class="btn-ocr" onclick="document.getElementById('capturaPlaca').click()">📸 LER PLACA</button></div>
-            </div>
-            <input type="file" id="capturaDoc" accept="image/*" capture="environment" style="display:none" onchange="processarOcr(event, 'doc')">
-            <input type="file" id="capturaPlaca" accept="image/*" capture="environment" style="display:none" onchange="processarOcr(event, 'placa')">
-
-            <form id="formEntrada">
-                <label>Empresa *</label>
-                <input type="text" id="empresa" required>
-
+                <label>Empresa *</label><input type="text" id="empresa" required>
                 <label>Tipo de Veículo *</label>
-                <select id="tipoVeiculo" required>
-                    <option value="Carreta/Caminhão" selected>Carreta / Caminhão</option>
-                    <option value="Pequeno">Veículo Pequeno</option>
-                </select>
+                <select id="tipoVeiculo" required><option value="Carreta/Caminhão" selected>Carreta / Caminhão</option><option value="Pequeno">Veículo Pequeno</option></select>
+                
+                <button type="button" class="btn-primario" style="margin-top:20px;" onclick="avancarPasso(1)">AVANÇAR ➔</button>
+                <button type="button" class="btn-secundario" onclick="voltarInicio()">Cancelar</button>
+            </div>
 
-                <label>Placa do Baú / Única *</label>
-                <input type="text" id="placaBau" required style="text-transform: uppercase;">
-
-                <label>Motorista *</label>
-                <input type="text" id="motorista" required>
-
+            <!-- PASSO 2 -->
+            <div id="passo2" class="passo-wizard">
+                <h3 style="color: var(--dourado); text-align: center;">2. Dados do Veículo</h3>
+                <label>Placa do Baú / Única *</label><input type="text" id="placaBau" required style="text-transform: uppercase;">
+                <label>Motorista *</label><input type="text" id="motorista" required>
                 <div class="flex-row">
                     <div><label>RG</label><input type="text" id="rg"></div>
                     <div><label>CNH</label><input type="text" id="cnh"></div>
                 </div>
-
-                <label>GPS Capturado *</label>
-                <input type="text" id="localizacao" readonly required style="background: #e9ecef; border-color: #ccc;">
-
-                <label>Observações</label>
-                <textarea id="observacoes" rows="2"></textarea>
-
-                <label>📸 Foto c/ Plaquinha (Obrigatório) *</label>
-                <button type="button" style="background:#333; margin-bottom: 5px;" onclick="document.getElementById('capturaSelfie').click()">📷 BATER FOTO DO MOTORISTA</button>
-                <input type="file" id="capturaSelfie" accept="image/*" capture="user" style="display:none" onchange="gerarCarimbo(event)">
+                <label>Observações</label><textarea id="observacoes" rows="2"></textarea>
                 
-                <img id="previewCarimbo" style="width: 100%; border-radius: 8px; margin-top: 5px; display: none; border: 2px solid var(--azul);">
-                <input type="hidden" id="fotoCarimbadaBase64" required>
-                <canvas id="canvasCarimbo" style="display:none;"></canvas>
+                <div class="flex-row" style="margin-top:20px;">
+                    <div><button type="button" class="btn-secundario" onclick="voltarPasso(2)">⬅ Voltar</button></div>
+                    <div><button type="button" class="btn-primario" onclick="avancarPasso(2)">AVANÇAR ➔</button></div>
+                </div>
+            </div>
 
-                <button type="submit" class="btn-sucesso" id="btnEnviar" onclick="salvarEntrada(event)" style="margin-top: 25px; padding: 18px; font-size: 16px;">🚀 SALVAR NO SISTEMA</button>
-            </form>
-        </div>
-        <button type="button" class="btn-alerta" style="background: #ccc; color: #333; margin-top: 10px;" onclick="voltar()">Cancelar / Voltar</button>
+            <!-- PASSO 3 -->
+            <div id="passo3" class="passo-wizard">
+                <h3 style="color: var(--dourado); text-align: center;">3. Auditoria</h3>
+                
+                <div class="box-calco">
+                    <h4>⚠️ PARADA OBRIGATÓRIA</h4>
+                    <p>O caminhão deve estar COMPLETAMENTE PARADO e com o CALÇO NAS RODAS posicionado.</p>
+                    <label style="display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; color: #fff;">
+                        <input type="checkbox" id="chkCalco" style="width: 25px; height: 25px;" onchange="verificarCalco()"> 
+                        <strong>☑️ CONFIRMO O CALÇO</strong>
+                    </label>
+                </div>
+
+                <div id="blocoConfirmacao" style="opacity: 0.3; pointer-events: none;">
+                    <div class="box-resumo">
+                        <p style="margin: 0 0 5px 0; font-size:12px; color:#aaa;">Confirme antes de bater a foto:</p>
+                        Placa: <span id="resumoPlaca">--</span> <br> Motorista: <span id="resumoMot">--</span>
+                    </div>
+
+                    <button type="button" style="background:#555; color:var(--dourado); border:1px solid var(--dourado);" onclick="document.getElementById('capturaSelfie').click()">📷 BATER FOTO DO MOTORISTA *</button>
+                    <input type="file" id="capturaSelfie" accept="image/*" capture="user" style="display:none" onchange="gerarCarimbo(event)">
+                    <img id="previewCarimbo" style="width: 100%; border-radius: 8px; margin-top: 5px; display: none; border: 2px solid var(--dourado);">
+                    <input type="hidden" id="fotoCarimbadaBase64" required>
+                    <canvas id="canvasCarimbo" style="display:none;"></canvas>
+
+                    <button type="submit" class="btn-sucesso" id="btnEnviar" onclick="salvarEntrada(event)" style="margin-top: 20px;">🚀 GRAVAR ENTRADA</button>
+                </div>
+                <button type="button" class="btn-secundario" style="margin-top: 15px;" onclick="voltarPasso(3)">⬅ Voltar aos Dados</button>
+            </div>
+        </form>
     </div>
 
-    <!-- TELA 3: DOCAS / SAÍDA -->
+    <!-- TELA 3: DOCAS -->
     <div id="telaSaida" class="tela">
-        <h3 style="text-align: center; color: var(--vermelho);">Veículos nas Docas</h3>
+        <h3 style="text-align: center; color: var(--alerta);">Veículos nas Docas</h3>
         <div id="listaDocas"></div>
-        
-        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
-        
-        <!-- SAÍDA MANUAL / ÓRFÃ (CASO O TURNO ANTERIOR TENHA SALVO OFFLINE) -->
-        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px dashed #ccc;">
-            <p style="font-size: 12px; color: #666; margin-top: 0; text-align: center;">Veículo não listado acima?</p>
-            <button type="button" class="btn-alerta" onclick="abrirSaidaManual()" style="margin-bottom:0;">🚨 REGISTRAR SAÍDA MANUAL (Veículo não listado)</button>
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #444;">
+        <div style="background: #252525; padding: 15px; border-radius: 8px; border: 1px dashed var(--alerta);">
+            <p style="font-size: 12px; color: #aaa; margin-top: 0; text-align: center;">Veículo do turno anterior?</p>
+            <button type="button" class="btn-alerta" onclick="abrirSaida(true)" style="margin-bottom:0;">🚨 SAÍDA MANUAL (Não Listado)</button>
         </div>
-
-        <button type="button" class="btn-alerta" style="background: #ccc; color: #333; margin-top: 15px;" onclick="voltar()">Voltar</button>
+        <button type="button" class="btn-secundario" style="margin-top: 15px;" onclick="voltarInicio()">Voltar ao Início</button>
     </div>
 
-    <!-- TELA 4: FORMULÁRIO DE SAÍDA MANUAL / ÓRFÃ -->
-    <div id="telaSaidaManual" class="tela">
-        <h3 style="text-align: center; color: var(--vermelho);">Saída Manual (Não Listado)</h3>
+    <!-- TELA 4: FORMULÁRIO DE SAÍDA (BLINDADO) -->
+    <div id="telaSaidaForm" class="tela">
+        <h3 style="text-align: center; color: var(--alerta);">Auditoria de Saída</h3>
+        
+        <input type="hidden" id="idSaidaOculto">
+        <input type="hidden" id="isSaidaManual">
+
+        <div id="boxPlacaSaidaManual" style="display: none; margin-bottom: 20px;">
+            <p style="font-size: 12px; color: #aaa;">Os dados de entrada estão processando. Realize a saída informando a placa abaixo:</p>
+            <label>Placa do Baú / Única *</label>
+            <input type="text" id="placaSaidaManual" style="text-transform: uppercase;">
+        </div>
+
         <div class="box-calco">
             <h4>⚠️ PARADA OBRIGATÓRIA</h4>
-            <p>O caminhão deve estar COMPLETAMENTE PARADO e com o CALÇO NAS RODAS posicionado.</p>
-            <label style="display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; font-size: 14px; color: #000;">
-                <input type="checkbox" id="chkCalcoSaida" style="width: 22px; height: 22px;" onchange="verificarCalcoSaida()"> 
+            <p>Confirme que o veículo está PARADO e CALÇADO antes de liberar a saída.</p>
+            <label style="display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; color: #fff;">
+                <input type="checkbox" id="chkCalcoSaida" style="width: 25px; height: 25px;" onchange="verificarCalcoSaida()"> 
                 <strong>☑️ CONFIRMO O CALÇO</strong>
             </label>
         </div>
 
-        <div id="blocoFormSaida" style="opacity: 0.4; pointer-events: none;">
-            <p style="font-size: 13px; color: #555; background: #e2e3e5; padding: 10px; border-radius: 6px;">
-                Os dados de entrada ainda estão sendo processados na planilha. Realize a saída normalmente: informe a placa do baú e tire a foto do motorista para gerar a Confirmação de Saída Digital.
-            </p>
-            <label>Placa do Baú / Única *</label>
-            <input type="text" id="placaBauSaidaManual" required style="text-transform: uppercase; margin-bottom: 15px;">
-
-            <label>📸 Foto do Motorista (Confirmação Digital) *</label>
-            <button type="button" style="background:#333; margin-bottom: 5px;" onclick="document.getElementById('capturaSelfieSaida').click()">📷 BATER FOTO DO MOTORISTA</button>
+        <div id="blocoConfirmacaoSaida" style="opacity: 0.3; pointer-events: none;">
+            <button type="button" style="background:#555; color:var(--alerta); border:1px solid var(--alerta);" onclick="document.getElementById('capturaSelfieSaida').click()">📷 BATER FOTO DO MOTORISTA *</button>
             <input type="file" id="capturaSelfieSaida" accept="image/*" capture="user" style="display:none" onchange="gerarCarimboSaida(event)">
-            
-            <img id="previewCarimboSaida" style="width: 100%; border-radius: 8px; margin-top: 5px; display: none; border: 2px solid var(--vermelho);">
+            <img id="previewCarimboSaida" style="width: 100%; border-radius: 8px; margin-top: 5px; display: none; border: 2px solid var(--alerta);">
             <input type="hidden" id="fotoSaidaBase64" required>
             
-            <button type="button" class="btn-sucesso" onclick="salvarSaidaManualFinal()" style="margin-top: 20px; padding: 18px; font-size: 16px;">✅ SALVAR SAÍDA MANUAL</button>
+            <button type="button" class="btn-sucesso" onclick="salvarSaidaFinal()" style="margin-top: 20px;">✅ CONFIRMAR E LIBERAR</button>
         </div>
-        <button type="button" class="btn-alerta" style="background: #ccc; color: #333; margin-top: 15px;" onclick="mostrarTela('telaSaida')">Voltar</button>
+        <button type="button" class="btn-secundario" style="margin-top: 15px;" onclick="mostrarTela('telaSaida')">Cancelar</button>
     </div>
 </div>
 
 <script>
     const urlApp = "https://script.google.com/macros/s/AKfycbyFgCjb1DRp_-TYMcQ6lqow_JlU9HWUvJpVULi36Syvb2POcYXjN7Cc-8gAbYumhkUS_w/exec";
-    let db = null;
-    let timerTimeout = null;
+    let db = null; let timerTimeout = null;
 
-    // INICIALIZAR BANCO DE DADOS INDEXEDDB (COFRE OFFLINE)
+    // Relógio de Ponto
+    setInterval(() => { document.getElementById('relogioTopo').innerText = new Date().toLocaleTimeString('pt-BR'); }, 1000);
+
+    // Vibração Híptica (Feedback Tátil)
+    function vibrar(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e){} }
+
+    // IndexedDB Sincronização
     window.onload = function() {
         const req = indexedDB.open("FarmaxRomaneioDB", 1);
-        req.onupgradeneeded = e => {
-            db = e.target.result;
-            if(!db.objectStoreNames.contains("fila")) {
-                db.createObjectStore("fila", { keyPath: "idLocal" });
-            }
-        };
-        req.onsuccess = e => {
-            db = e.target.result;
-            sincronizarFila();
-        };
-        setInterval(sincronizarFila, 30000); // Tenta sincronizar a cada 30 segundos se houver internet
+        req.onupgradeneeded = e => { db = e.target.result; if(!db.objectStoreNames.contains("fila")) db.createObjectStore("fila", { keyPath: "idLocal" }); };
+        req.onsuccess = e => { db = e.target.result; sincronizarFila(); };
+        setInterval(sincronizarFila, 30000);
     };
 
-    // CONTROLE DE TELA BLOQUEADA COM TIMEOUT DE 60 SEGUNDOS (ANTI-PÂNICO)
     function ativarBloqueio(msg) {
-        document.getElementById('msgBloqueio').innerHTML = msg;
-        document.getElementById('overlayBloqueio').style.display = 'flex';
-        
-        // Timeout de 60 segundos para evitar travamento eterno se o celular engasgar
+        document.getElementById('msgBloqueio').innerHTML = msg; document.getElementById('overlayBloqueio').style.display = 'flex';
         if(timerTimeout) clearTimeout(timerTimeout);
-        timerTimeout = setTimeout(() => {
-            desativarBloqueio();
-            alert("⚠️ O processamento demorou mais que o esperado. O sistema foi liberado. Tente novamente ou digite manualmente.");
-        }, 60000);
+        timerTimeout = setTimeout(() => { desativarBloqueio(); alert("⚠️ O processamento demorou muito. O sistema foi liberado para ação manual."); }, 60000);
     }
-    
-    function desativarBloqueio() {
-        if(timerTimeout) clearTimeout(timerTimeout);
-        document.getElementById('overlayBloqueio').style.display = 'none';
+    function desativarBloqueio() { if(timerTimeout) clearTimeout(timerTimeout); document.getElementById('overlayBloqueio').style.display = 'none'; }
+    function mostrarTela(id) { document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa')); document.getElementById(id).classList.add('ativa'); }
+
+    // Solicitar GPS
+    function solicitarGPS() {
+        vibrar(50); ativarBloqueio("⏳<br>VERIFICANDO GPS...");
+        if(navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                p => { document.getElementById('localizacao').value = p.coords.latitude + ", " + p.coords.longitude; desativarBloqueio(); mostrarTela('telaInicio'); vibrar([50, 50]); }, 
+                () => { desativarBloqueio(); alert("⚠️ ACESSO NEGADO. O GPS é obrigatório."); }, { enableHighAccuracy: true, timeout: 15000 }
+            );
+        }
     }
 
-    function mostrarTela(id) { document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa')); document.getElementById(id).classList.add('ativa'); }
-    
-    function voltar() { 
-        document.getElementById('formEntrada').reset(); 
-        document.getElementById('chkCalco').checked = false;
-        document.getElementById('blocoFormulario').style.opacity = '0.4';
-        document.getElementById('blocoFormulario').style.pointerEvents = 'none';
-        document.getElementById('previewCarimbo').style.display = 'none'; 
-        document.getElementById('fotoCarimbadaBase64').value = ""; 
-        mostrarTela('telaInicio'); 
+    function voltarInicio() { document.getElementById('formEntrada').reset(); resetarSeguranca(); mostrarTela('telaInicio'); }
+    function resetarSeguranca() {
+        document.getElementById('chkCalco').checked = false; document.getElementById('chkCalcoSaida').checked = false;
+        verificarCalco(); verificarCalcoSaida();
+        document.getElementById('previewCarimbo').style.display = 'none'; document.getElementById('fotoCarimbadaBase64').value = "";
+        document.getElementById('previewCarimboSaida').style.display = 'none'; document.getElementById('fotoSaidaBase64').value = "";
+    }
+
+    // Wizard (Passo a Passo)
+    function iniciarEntrada() { vibrar(50); document.getElementById('barraProgressoBox').style.display = 'block'; mostrarTela('telaEntrada'); irParaPasso(1); }
+    function avancarPasso(atual) {
+        vibrar(30);
+        if(atual === 1) {
+            if(!document.getElementById('empresa').checkValidity()) { document.getElementById('empresa').reportValidity(); return; }
+            irParaPasso(2);
+        } else if(atual === 2) {
+            if(!document.getElementById('placaBau').checkValidity() || !document.getElementById('motorista').checkValidity()) { document.getElementById('formEntrada').reportValidity(); return; }
+            document.getElementById('resumoPlaca').innerText = document.getElementById('placaBau').value.toUpperCase();
+            document.getElementById('resumoMot').innerText = document.getElementById('motorista').value.toUpperCase();
+            irParaPasso(3);
+        }
+    }
+    function voltarPasso(atual) { vibrar(30); irParaPasso(atual - 1); }
+    function irParaPasso(num) {
+        document.querySelectorAll('.passo-wizard').forEach(p => p.classList.remove('ativa'));
+        document.getElementById('passo' + num).classList.add('ativa');
+        const pct = num === 1 ? '33%' : (num === 2 ? '66%' : '100%');
+        document.getElementById('barraProgresso').style.width = pct;
     }
 
     function verificarCalco() {
-        const chk = document.getElementById('chkCalco').checked;
-        const bloco = document.getElementById('blocoFormulario');
-        if(chk) { bloco.style.opacity = '1'; bloco.style.pointerEvents = 'auto'; } 
-        else { bloco.style.opacity = '0.4'; bloco.style.pointerEvents = 'none'; }
+        const chk = document.getElementById('chkCalco').checked; const bloco = document.getElementById('blocoConfirmacao');
+        if(chk) { bloco.style.opacity = '1'; bloco.style.pointerEvents = 'auto'; vibrar([50, 100, 50]); } else { bloco.style.opacity = '0.3'; bloco.style.pointerEvents = 'none'; }
     }
-
     function verificarCalcoSaida() {
-        const chk = document.getElementById('chkCalcoSaida').checked;
-        const bloco = document.getElementById('blocoFormSaida');
-        if(chk) { bloco.style.opacity = '1'; bloco.style.pointerEvents = 'auto'; } 
-        else { bloco.style.opacity = '0.4'; bloco.style.pointerEvents = 'none'; }
+        const chk = document.getElementById('chkCalcoSaida').checked; const bloco = document.getElementById('blocoConfirmacaoSaida');
+        if(chk) { bloco.style.opacity = '1'; bloco.style.pointerEvents = 'auto'; vibrar([50, 100, 50]); } else { bloco.style.opacity = '0.3'; bloco.style.pointerEvents = 'none'; }
     }
 
-    // SOLICITAR GPS (TELA ZERO)
-    function solicitarGPS() {
-        ativarBloqueio("⏳<br>VERIFICANDO GPS...<br>AGUARDE ALGUNS SEGUNDOS.");
-        if(navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                p => {
-                    document.getElementById('localizacao').value = p.coords.latitude + ", " + p.coords.longitude;
-                    desativarBloqueio();
-                    mostrarTela('telaInicio');
-                }, 
-                () => {
-                    desativarBloqueio();
-                    alert("⚠️ ACESSO NEGADO.\nVocê precisa aceitar o aviso de localização do seu celular para usar o sistema.");
-                }, 
-                { enableHighAccuracy: true, timeout: 15000 }
-            );
-        } else {
-            desativarBloqueio();
-            alert("Seu celular não tem suporte a GPS.");
-        }
-    }
-
-    // OCR COM RAIO-X (CONTRASTE E BLACK/WHITE)
+    // OCR com Canvas Raio-X
     async function processarOcr(e, tipo) {
         const file = e.target.files[0]; if(!file) return;
-        ativarBloqueio(`⏳<br>LENDO IMAGEM DA CÂMERA...<br><span style='font-size:14px;color:#ffc107'>AGUARDE ALGUNS SEGUNDOS.</span>`);
-        
+        ativarBloqueio(`⏳<br>LENDO IMAGEM...`);
         try {
-            const img = new Image();
-            img.src = URL.createObjectURL(file);
-            await new Promise(r => img.onload = r);
-            
+            const img = new Image(); img.src = URL.createObjectURL(file); await new Promise(r => img.onload = r);
             const cv = document.createElement('canvas'); const ctx = cv.getContext('2d');
-            const scale = 1200 / img.width; 
-            cv.width = 1200; cv.height = img.height * scale;
-            
-            ctx.filter = 'grayscale(100%) contrast(250%)';
-            ctx.drawImage(img, 0, 0, cv.width, cv.height);
-            const imagemTratada = cv.toDataURL('image/jpeg');
-
+            const scale = 1200 / img.width; cv.width = 1200; cv.height = img.height * scale;
+            ctx.filter = 'grayscale(100%) contrast(250%)'; ctx.drawImage(img, 0, 0, cv.width, cv.height);
             const worker = await Tesseract.createWorker('por');
+            if(tipo === 'placa') await worker.setParameters({ tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-' });
+            const ret = await worker.recognize(cv.toDataURL('image/jpeg')); 
+            const txt = ret.data.text.toUpperCase();
             if(tipo === 'placa') {
-                await worker.setParameters({ tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-' });
-            }
-            
-            const ret = await worker.recognize(imagemTratada); 
-            const txtBruto = ret.data.text.toUpperCase();
-            
-            if(tipo === 'placa') {
-                const txtLimpo = txtBruto.replace(/[^A-Z0-9]/g, '');
-                const m = txtLimpo.match(/[A-Z]{3}[0-9][A-Z0-9][0-9]{2}/);
-                if(m) { 
-                    document.getElementById('placaBau').value = m[0]; 
-                    alert('✅ PLACA IDENTIFICADA!'); 
-                } else {
-                    alert('⚠️ Não achei uma placa nítida. Digite manualmente.');
-                }
+                const m = txt.replace(/[^A-Z0-9]/g, '').match(/[A-Z]{3}[0-9][A-Z0-9][0-9]{2}/);
+                if(m) { document.getElementById('placaBau').value = m[0]; vibrar(200); alert('✅ PLACA ACHADA!'); } else alert('⚠️ Placa ilegível.');
             } else {
-                const rg = txtBruto.match(/\b\d{1,2}\.?\d{3}\.?\d{3}-?[0-9X]\b/); 
-                const cnh = txtBruto.match(/\b\d{11}\b/);
-                if(rg) document.getElementById('rg').value = rg[0]; 
-                if(cnh) document.getElementById('cnh').value = cnh[0];
-                alert('✅ Leitura de Documento finalizada. Confira os campos!');
+                const rg = txt.match(/\b\d{1,2}\.?\d{3}\.?\d{3}-?[0-9X]\b/); const cnh = txt.match(/\b\d{11}\b/);
+                if(rg) document.getElementById('rg').value = rg[0]; if(cnh) document.getElementById('cnh').value = cnh[0];
+                vibrar(200); alert('✅ Documento lido!');
             }
             await worker.terminate();
-        } catch(err) { 
-            alert('❌ Falha na leitura. Digite manualmente.'); 
-        } finally {
-            desativarBloqueio();
-        }
+        } catch(err) { alert('❌ Erro no leitor.'); } finally { desativarBloqueio(); }
     }
 
-    // CARIMBO DE VISTORIA (FOTO DE ENTRADA)
+    // Carimbos
+    function renderizarCarimbo(ev, canvasId, previewId, base64Id, txtArray, corBorda) {
+        const img = new Image(); img.onload = function() {
+            const cv = document.getElementById(canvasId) || document.createElement('canvas'); const ctx = cv.getContext('2d');
+            const sc = 800 / img.width; cv.width = 800; cv.height = img.height * sc;
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(0, cv.height - (txtArray.length * 25 + 30), cv.width, (txtArray.length * 25 + 30));
+            ctx.fillStyle = corBorda; ctx.font = "bold 17px Arial"; let y = cv.height - (txtArray.length * 25);
+            txtArray.forEach((linha, i) => { ctx.fillStyle = i === 0 ? corBorda : "#FFF"; ctx.fillText(linha, 15, y); y+=25; });
+            const b64 = cv.toDataURL('image/jpeg', 0.6);
+            document.getElementById(base64Id).value = b64; 
+            const prev = document.getElementById(previewId); prev.src = b64; prev.style.display = 'block'; prev.style.borderColor = corBorda;
+            desativarBloqueio(); vibrar(100);
+        }; img.src = ev.target.result;
+    }
+
     function gerarCarimbo(e) {
-        const f = e.target.files[0]; if(!f) return;
-        ativarBloqueio("⏳<br>GERANDO FOTO DE VISTORIA...");
-        const r = new FileReader();
-        r.onload = function(ev) {
-            const img = new Image();
-            img.onload = function() {
-                const cv = document.getElementById('canvasCarimbo'); const ctx = cv.getContext('2d');
-                const sc = 800 / img.width; cv.width = 800; cv.height = img.height * sc;
-                ctx.drawImage(img, 0, 0, cv.width, cv.height);
-                ctx.fillStyle = "rgba(0,0,0,0.75)"; ctx.fillRect(0, cv.height - 210, cv.width, 210);
-                ctx.fillStyle = "#FFF"; ctx.font = "bold 17px Arial"; let y = cv.height - 180;
-                
-                ctx.fillText(`EU, ${document.getElementById('motorista').value.toUpperCase()}, CONFIRMO ESTE ROMANEIO.`, 15, y); ctx.font = "15px Arial"; y+=25;
-                ctx.fillText(`EMPRESA: ${document.getElementById('empresa').value.toUpperCase()} | PORT: ${document.getElementById('portariaPainel').value}`, 15, y); y+=25;
-                ctx.fillText(`TIPO: ${document.getElementById('tipoVeiculo').value.toUpperCase()} | PLACA: ${document.getElementById('placaBau').value.toUpperCase()}`, 15, y); y+=25;
-                ctx.fillText(`RG: ${document.getElementById('rg').value} | CNH: ${document.getElementById('cnh').value}`, 15, y); y+=25;
-                ctx.fillText(`DATA/HORA: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`, 15, y); y+=25;
-                ctx.fillText(`GPS: ${document.getElementById('localizacao').value}`, 15, y);
-                
-                const b64 = cv.toDataURL('image/jpeg', 0.6);
-                document.getElementById('fotoCarimbadaBase64').value = b64; 
-                document.getElementById('previewCarimbo').src = b64; 
-                document.getElementById('previewCarimbo').style.display = 'block';
-                desativarBloqueio();
-            }; img.src = ev.target.result;
-        }; r.readAsDataURL(f);
-    }
-
-    // SALVAR ENTRADA (COM COFRE OFFLINE INDEXEDDB)
-    function salvarEntrada(e) {
-        e.preventDefault(); 
-        if(!document.getElementById('formEntrada').checkValidity()) { 
-            document.getElementById('formEntrada').reportValidity(); 
-            return; 
-        }
-        if(document.getElementById('fotoCarimbadaBase64').value === "") {
-            alert("⚠️ ALERTA: Você é obrigado a bater a foto da plaquinha antes de salvar.");
-            return;
-        }
-
-        ativarBloqueio("🚀<br>REGISTRANDO ENTRADA NO SISTEMA...");
-        
-        const obj = {
-            idLocal: Date.now().toString(), 
-            tipoRegistro: "Entrada", 
-            portaria: document.getElementById('portariaPainel').value,
-            empresa: document.getElementById('empresa').value, 
-            tipoVeiculo: document.getElementById('tipoVeiculo').value,
-            placaBau: document.getElementById('placaBau').value,
-            motorista: document.getElementById('motorista').value, 
-            rg: document.getElementById('rg').value, 
-            cnh: document.getElementById('cnh').value,
-            localizacao: document.getElementById('localizacao').value, 
-            observacoes: document.getElementById('observacoes').value,
-            fotoValidacao: document.getElementById('fotoCarimbadaBase64').value, 
-            dataAtual: new Date().toLocaleDateString('pt-BR'), 
-            horaAtual: new Date().toLocaleTimeString('pt-BR'),
-            calcoConfirmado: "SIM",
-            modoRegistro: "Normal",
-            userAgent: navigator.userAgent
-        };
-
-        salvarNoCofreOffline(obj);
-    }
-
-    // SALVAR SAÍDA DE VEÍCULO LISTADO
-    function darSaida(id) {
-        ativarBloqueio("🚀<br>REGISTRANDO SAÍDA...");
-        const obj = {
-            idLocal: id, 
-            tipoRegistro: "Saida", 
-            dataAtual: new Date().toLocaleDateString('pt-BR'), 
-            horaAtual: new Date().toLocaleTimeString('pt-BR')
-        };
-        salvarNoCofreOffline(obj);
-    }
-
-    // SAÍDA MANUAL / ÓRFÃ
-    function abrirSaidaManual() {
-        document.getElementById('chkCalcoSaida').checked = false;
-        document.getElementById('blocoFormSaida').style.opacity = '0.4';
-        document.getElementById('blocoFormSaida').style.pointerEvents = 'none';
-        document.getElementById('placaBauSaidaManual').value = "";
-        document.getElementById('previewCarimboSaida').style.display = 'none';
-        document.getElementById('fotoSaidaBase64').value = "";
-        mostrarTela('telaSaidaManual');
+        const f = e.target.files[0]; if(!f) return; ativarBloqueio("⏳<br>GERANDO FOTO DE ENTRADA...");
+        const r = new FileReader(); r.onload = ev => renderizarCarimbo(ev, 'canvasCarimbo', 'previewCarimbo', 'fotoCarimbadaBase64', [
+            `EU, ${document.getElementById('motorista').value.toUpperCase()}, CONFIRMO ESTA ENTRADA.`,
+            `EMPRESA: ${document.getElementById('empresa').value.toUpperCase()} | PORT: ${document.getElementById('portariaPainel').value}`,
+            `PLACA: ${document.getElementById('placaBau').value.toUpperCase()} | GPS: ${document.getElementById('localizacao').value}`,
+            `DATA/HORA: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`
+        ], '#d4af37'); r.readAsDataURL(f);
     }
 
     function gerarCarimboSaida(e) {
-        const f = e.target.files[0]; if(!f) return;
-        ativarBloqueio("⏳<br>GERANDO CONFIRMAÇÃO DE SAÍDA...");
-        const r = new FileReader();
-        r.onload = function(ev) {
-            const img = new Image();
-            img.onload = function() {
-                const cv = document.createElement('canvas'); const ctx = cv.getContext('2d');
-                const sc = 800 / img.width; cv.width = 800; cv.height = img.height * sc;
-                ctx.drawImage(img, 0, 0, cv.width, cv.height);
-                ctx.fillStyle = "rgba(0,0,0,0.75)"; ctx.fillRect(0, cv.height - 180, cv.width, 180);
-                ctx.fillStyle = "#FFF"; ctx.font = "bold 17px Arial"; let y = cv.height - 150;
-                
-                ctx.fillText(`CONFIRMAÇÃO DE SAÍDA DIGITAL - FARMAX`, 15, y); ctx.font = "15px Arial"; y+=25;
-                ctx.fillText(`PLACA BAÚ: ${document.getElementById('placaBauSaidaManual').value.toUpperCase()}`, 15, y); y+=25;
-                ctx.fillText(`DATA/HORA: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`, 15, y); y+=25;
-                ctx.fillText(`GPS: ${document.getElementById('localizacao').value || "Não capturado"}`, 15, y);
-                
-                const b64 = cv.toDataURL('image/jpeg', 0.6);
-                document.getElementById('fotoSaidaBase64').value = b64; 
-                document.getElementById('previewCarimboSaida').src = b64; 
-                document.getElementById('previewCarimboSaida').style.display = 'block';
-                desativarBloqueio();
-            }; img.src = ev.target.result;
+        const f = e.target.files[0]; if(!f) return; ativarBloqueio("⏳<br>GERANDO FOTO DE SAÍDA...");
+        const r = new FileReader(); r.onload = ev => {
+            let placa = document.getElementById('isSaidaManual').value === "true" ? document.getElementById('placaSaidaManual').value.toUpperCase() : "REGISTRADA NA DOCA";
+            renderizarCarimbo(ev, 'canvasCarimbo', 'previewCarimboSaida', 'fotoSaidaBase64', [
+                `CONFIRMAÇÃO DE SAÍDA DIGITAL - FARMAX`,
+                `PORT: ${document.getElementById('portariaPainel').value} | PLACA BAÚ: ${placa}`,
+                `DATA/HORA: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`,
+                `GPS: ${document.getElementById('localizacao').value}`
+            ], '#ffc107');
         }; r.readAsDataURL(f);
     }
 
-    function salvarSaidaManualFinal() {
-        const placa = document.getElementById('placaBauSaidaManual').value;
-        const foto = document.getElementById('fotoSaidaBase64').value;
-        if(!placa || !foto) { alert("⚠️ Preencha a placa e bata a foto do motorista para a confirmação de saída!"); return; }
-
-        ativarBloqueio("🚀<br>REGISTRANDO SAÍDA MANUAL...");
+    // Salvar no Banco e Nuvem
+    function salvarEntrada(e) {
+        e.preventDefault(); 
+        if(document.getElementById('fotoCarimbadaBase64').value === "") { alert("⚠️ BATA A FOTO ANTES DE SALVAR."); return; }
+        ativarBloqueio("🚀<br>SALVANDO ENTRADA...");
         const obj = {
-            idLocal: "saida_manual_" + Date.now().toString(),
-            tipoRegistro: "Entrada", // Trata como registro especial para fechar na nuvem
-            portaria: document.getElementById('portariaPainel').value,
-            empresa: "SAÍDA MANUAL (ÓRFÃ)",
-            tipoVeiculo: "Caminhão",
-            placaBau: placa,
-            motorista: "Não informado",
-            rg: "", cnh: "",
-            localizacao: document.getElementById('localizacao').value || "",
-            observacoes: "SAÍDA MANUAL REALIZADA SEM ENTRADA PRÉVIA NA TELA",
-            fotoValidacao: foto,
-            dataAtual: new Date().toLocaleDateString('pt-BR'),
-            horaAtual: new Date().toLocaleTimeString('pt-BR'),
-            calcoConfirmado: "SIM (SAÍDA MANUAL)",
-            modoRegistro: "Manual / Órfã",
-            userAgent: navigator.userAgent
+            idLocal: Date.now().toString(), tipoRegistro: "Entrada", portaria: document.getElementById('portariaPainel').value,
+            empresa: document.getElementById('empresa').value, tipoVeiculo: document.getElementById('tipoVeiculo').value, placaBau: document.getElementById('placaBau').value,
+            motorista: document.getElementById('motorista').value, rg: document.getElementById('rg').value, cnh: document.getElementById('cnh').value,
+            localizacao: document.getElementById('localizacao').value, observacoes: document.getElementById('observacoes').value,
+            fotoValidacao: document.getElementById('fotoCarimbadaBase64').value, dataAtual: new Date().toLocaleDateString('pt-BR'), horaAtual: new Date().toLocaleTimeString('pt-BR'),
+            calcoConfirmado: "SIM", modoRegistro: "App Web", userAgent: navigator.userAgent
         };
-        salvarNoCofreOffline(obj);
+        let p = JSON.parse(localStorage.getItem('patioApp')) || []; p.push(obj); localStorage.setItem('patioApp', JSON.stringify(p));
+        salvarNoCofreOffline(obj, true);
     }
 
-    // GRAVAÇÃO NO COFRE INTERNO (INDEXEDDB) E FEEDBACK IMEDIATO AO VIGIA
-    function salvarNoCofreOffline(obj) {
-        if (!db) {
-            enviarImediatamente(obj);
-            return;
+    function abrirDocas() {
+        vibrar(30); let p = JSON.parse(localStorage.getItem('patioApp')) || []; const port = document.getElementById('portariaPainel').value;
+        const lista = document.getElementById('listaDocas'); const filt = p.filter(v => v.portaria === port);
+        if(filt.length === 0) lista.innerHTML = '<p style="text-align:center; color:#888;">Docas vazias nesta portaria.</p>';
+        else {
+            lista.innerHTML = '';
+            filt.forEach(v => lista.innerHTML += `<div class="card-veiculo"><strong>${v.empresa}</strong><br>Mot: ${v.motorista}<br>Placa: <strong style="color:var(--dourado)">${v.placaBau}</strong><br><small>Entrou: ${v.horaAtual}</small><br><button class="btn-sucesso" style="margin-top:10px;" onclick="abrirSaida(false, '${v.idLocal}')">✅ REGISTRAR SAÍDA</button></div>`);
         }
-        const tx = db.transaction("fila", "readwrite");
-        const store = tx.objectStore("fila");
-        store.put(obj);
-        
-        tx.oncomplete = function() {
-            desativarBloqueio();
-            alert("✅ SUCESSO!\nOperação registrada com sucesso.");
-            sincronizarFila();
-            if(obj.tipoRegistro === "Entrada") { voltar(); } 
-            else { abrirDocas(); }
-        };
-        tx.onerror = function() {
-            desativarBloqueio();
-            enviarImediatamente(obj);
-        };
+        mostrarTela('telaSaida');
     }
 
-    // ROBOZINHO DE SINCRONIZAÇÃO EM SEGUNDO PLANO
+    function abrirSaida(isManual, idLocal = "") {
+        vibrar(30); resetarSeguranca();
+        document.getElementById('idSaidaOculto').value = isManual ? "saida_manual_" + Date.now() : idLocal;
+        document.getElementById('isSaidaManual').value = isManual ? "true" : "false";
+        document.getElementById('boxPlacaSaidaManual').style.display = isManual ? "block" : "none";
+        document.getElementById('placaSaidaManual').required = isManual;
+        mostrarTela('telaSaidaForm');
+    }
+
+    function salvarSaidaFinal() {
+        const isManual = document.getElementById('isSaidaManual').value === "true";
+        const placa = document.getElementById('placaSaidaManual').value;
+        const foto = document.getElementById('fotoSaidaBase64').value;
+        const id = document.getElementById('idSaidaOculto').value;
+
+        if(isManual && !placa) { alert("⚠️ Informe a placa do veículo."); return; }
+        if(!foto) { alert("⚠️ Bata a foto de confirmação de saída!"); return; }
+
+        ativarBloqueio("🚀<br>SALVANDO SAÍDA...");
+        const obj = {
+            idLocal: id, tipoRegistro: "Saida", isManual: isManual ? "true" : "false", placaBau: isManual ? placa : "",
+            fotoValidacao: foto, portaria: document.getElementById('portariaPainel').value,
+            dataAtual: new Date().toLocaleDateString('pt-BR'), horaAtual: new Date().toLocaleTimeString('pt-BR'),
+            calcoConfirmado: "SIM (SAÍDA)", modoRegistro: isManual ? "Manual/Orfã" : "Lista Docas",
+            localizacao: document.getElementById('localizacao').value, userAgent: navigator.userAgent
+        };
+
+        if(!isManual) {
+            let p = JSON.parse(localStorage.getItem('patioApp')) || [];
+            localStorage.setItem('patioApp', JSON.stringify(p.filter(v => v.idLocal !== id)));
+        }
+        salvarNoCofreOffline(obj, false);
+    }
+
+    function salvarNoCofreOffline(obj, isEntrada) {
+        if (!db) { enviarImediatamente(obj, isEntrada); return; }
+        const tx = db.transaction("fila", "readwrite"); tx.objectStore("fila").put(obj);
+        tx.oncomplete = function() { desativarBloqueio(); alert("✅ SUCESSO!\nSalvo com segurança."); sincronizarFila(); vibrar([100, 100]); if(isEntrada) voltarInicio(); else { document.getElementById('barraProgressoBox').style.display = 'none'; abrirDocas(); } };
+        tx.onerror = function() { desativarBloqueio(); enviarImediatamente(obj, isEntrada); };
+    }
+
+    function enviarImediatamente(obj, isEntrada) {
+        fetch(urlApp, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(obj) })
+        .then(() => { desativarBloqueio(); alert("✅ SUCESSO!"); vibrar([100, 100]); if(isEntrada) voltarInicio(); else abrirDocas(); })
+        .catch(() => { desativarBloqueio(); alert("✅ Salvo no aparelho (Offline)."); if(isEntrada) voltarInicio(); else abrirDocas(); });
+    }
+
     function sincronizarFila() {
         if (!db || !navigator.onLine) return;
         const tx = db.transaction("fila", "readonly");
-        const store = tx.objectStore("fila");
-        const req = store.getAll();
-        
-        req.onsuccess = function(e) {
-            const itens = e.target.result;
-            if(!itens || itens.length === 0) return;
-            
+        tx.objectStore("fila").getAll().onsuccess = e => {
+            const itens = e.target.result; if(!itens || itens.length === 0) return;
             itens.forEach(item => {
                 fetch(urlApp, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(item) })
-                .then(() => {
-                    // Se enviou com sucesso, apaga do cofre interno
-                    const delTx = db.transaction("fila", "readwrite");
-                    const delStore = delTx.objectStore("fila");
-                    delStore.delete(item.idLocal);
-                })
-                .catch(() => {});
+                .then(() => { const delTx = db.transaction("fila", "readwrite"); delTx.objectStore("fila").delete(item.idLocal); }).catch(() => {});
             });
         };
-    }
-
-    function enviarImediatamente(obj) {
-        fetch(urlApp, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(obj) })
-        .then(() => {
-            desativarBloqueio();
-            alert("✅ SUCESSO!\nOperação registrada com sucesso.");
-            if(obj.tipoRegistro === "Entrada") { voltar(); } else { abrirDocas(); }
-        })
-        .catch(() => {
-            desativarBloqueio();
-            alert("✅ SUCESSO!\nOperação registrada no aparelho.");
-            if(obj.tipoRegistro === "Entrada") { voltar(); } else { abrirDocas(); }
-        });
-    }
-
-    // TELA DE DOCAS (LISTA DE VEÍCULOS NO PÁTIO)
-    function abrirDocas() {
-        let patioLocal = JSON.parse(localStorage.getItem('patioApp')) || [];
-        const port = document.getElementById('portariaPainel').value;
-        const lista = document.getElementById('listaDocas'); 
-        const filt = patioLocal.filter(v => v.portaria === port);
-        
-        if(filt.length === 0) {
-            lista.innerHTML = '<p style="text-align:center; color:#666;">Nenhum veículo registrado no momento.</p>';
-        } else {
-            lista.innerHTML = '';
-            filt.forEach(v => {
-                lista.innerHTML += `
-                    <div class="card-veiculo">
-                        <strong>Empresa: ${v.empresa}</strong><br>
-                        Motorista: ${v.motorista}<br>
-                        Placa Baú: <strong>${v.placaBau}</strong><br>
-                        <small>Entrada: ${v.horaAtual} (${v.dataAtual})</small><br>
-                        <button class="btn-sucesso" style="margin-top:10px;" onclick="darSaida('${v.idLocal}')">✅ REGISTRAR SAÍDA</button>
-                    </div>`;
-            });
-        }
-        mostrarTela('telaSaida');
     }
 </script>
 </body>
