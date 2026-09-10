@@ -403,6 +403,13 @@ hr.sep{border:0;border-top:1px solid #2a2f3b;margin:15px 0}
               </div>
 
               <div id="thirdPartyFields">
+                
+                <!-- INÍCIO BOTÃO BYPASS MODO DEV -->
+                <button type="button" class="btn btn-danger btn-small" id="btnDevTest" style="margin-bottom: 12px; background: #973737; color: white; border: 1px solid #d95757;">
+                  🧪 AUTO-PREENCHER (TESTE MODO DEV)
+                </button>
+                <!-- FIM BOTÃO BYPASS -->
+
                 <div class="field">
                   <label for="empresa">EMPRESA *</label>
                   <input id="empresa" type="text" required disabled autocomplete="organization">
@@ -1129,6 +1136,24 @@ $("btnFleetGate").addEventListener("click",async()=>{
   showView("viewMain");
 });
 
+/* ---------- LÓGICA DO BOTÃO BYPASS DEV ---------- */
+$("btnDevTest").addEventListener("click", () => {
+  state.manualUnlocked = true;
+  state.ocrDocumentAttempted = true; // Bypassa exigência de fotoFlow da OCR
+  
+  ["empresa","tipoVeiculo","placaBau","placaCavalo","motorista","rg","cnh","ajudantes","materiais","observacoes"].forEach(id=>$(id).disabled=false);
+  
+  $("empresa").value = "FARMAX TESTES S.A";
+  $("placaBau").value = "XXX9999";
+  $("motorista").value = "Senhor Daniel";
+  $("rg").value = "MG-10.200.300";
+  $("tipoVeiculo").value = "Veículo Pequeno"; // Setado como pequeno para não exigir cavalo por padrão
+  
+  updateVehicleTypeFields();
+  updateEntryButton();
+  toast("Modo DEV ativado. Campos preenchidos e liberados.");
+});
+
 /* ---------- ENTRY START ---------- */
 
 $("btnNovo").addEventListener("click",()=>{
@@ -1457,13 +1482,15 @@ function updateEntryButton(){
   const placa=$("placaBau").value.trim();
   const mot=$("motorista").value.trim();
   const type=$("tipoVeiculo").value;
-  const cavaloOk=type==="Veículo Pequeno" || $("placaCavalo").value.trim();
+  // Corrigido para >= 6 a exigência da placa e cavalo para evitar travamento atoa
+  const cavaloOk=type==="Veículo Pequeno" || $("placaCavalo").value.trim().length>=6;
   const photoFlow=state.ocrDocumentAttempted || state.ocrPlateAttempted;
+  
   $("btnEntryNext1").disabled=!(
     state.manualUnlocked &&
     empresa.length>=2 &&
-    placa.length>=7 &&
-    mot.length>=3 &&
+    placa.length>=6 &&
+    mot.length>=2 &&
     cavaloOk &&
     photoFlow
   );
