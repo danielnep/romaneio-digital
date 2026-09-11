@@ -75,76 +75,19 @@
         <section id="viewEntry" class="view">
           <form id="entryForm" novalidate>
             <div class="progress-bar"><span id="entryProgress" style="width:33%"></span></div>
-
-            <div id="stepEntry1" class="wizard-step active">
-              <div class="card">
-                <div class="eyebrow">ENTRADA • PASSO 1 DE 3</div>
-                <h2>Triagem</h2>
-                <p class="sub">A imagem vem primeiro. O preenchimento manual só é liberado depois de uma tentativa real de leitura que não resolva os dados.</p>
-
-                <div class="field"><label for="tipoAcesso">TIPO DE ACESSO</label><select id="tipoAcesso"><option value="terceiro" selected>Fornecedor / Terceiro</option><option value="frota">Frota própria</option></select></div>
-
-                <div id="thirdPartyFields">
-                  <button id="btnDevTest" type="button" class="btn btn-dev">🧪 Auto-preencher (modo dev)</button>
-                  <div class="field"><label for="empresa">EMPRESA *</label><input id="empresa" type="text" required disabled autocomplete="organization"></div>
-                  <div class="field"><label for="tipoVeiculo">TIPO DE VEÍCULO *</label><select id="tipoVeiculo" required disabled><option value="Caminhões & Carretas">Caminhões & Carretas</option><option value="Veículo Pequeno">Veículo Pequeno</option></select></div>
-
-                  <div class="field">
-                    <label>LEITURA INTELIGENTE</label>
-                    <div class="ocr-grid"><button id="btnOcrDocumento" type="button" class="btn btn-secondary" disabled>📄 Ler RG / CNH</button><button id="btnOcrPlaca" type="button" class="btn btn-secondary" disabled>🚛 Ler placa</button></div>
-                    <input id="fileDocumento" class="file-input" type="file" accept="image/*" capture="environment">
-                    <input id="filePlacaBau" class="file-input" type="file" accept="image/*" capture="environment">
-                    <div id="ocrStatus" class="ocr-box">Aguardando tentativa de leitura.</div>
-                    <div id="manualEscapeArea" class="hidden"><button id="btnManualEscape" type="button" class="btn btn-outline">Não foi possível ler a imagem</button><div class="manual-note">O modo manual aparece depois de uma tentativa real de OCR sem resultado utilizável.</div></div>
-                  </div>
-
-                  <div class="step-nav single"><button id="btnEntryNext1" type="button" class="btn btn-primary" disabled>Avançar</button><button id="btnCancelEntry1" type="button" class="btn btn-ghost">Cancelar</button></div>
-                </div>
-
-                <div id="fleetBranch" class="hidden"><div class="banner success"><strong>Frota própria.</strong><br>Sem romaneio de terceiro. Proceda conforme o fluxo interno.</div><button id="btnFleetGate" type="button" class="btn btn-success">Liberar portão</button><button id="btnFleetBack" type="button" class="btn btn-ghost">Voltar</button></div>
-              </div>
-            </div>
-
-            <div id="stepEntry2" class="wizard-step">
-              <div class="card">
-                <div class="eyebrow">ENTRADA • PASSO 2 DE 3</div><h2>Dados e vistoria</h2>
-                <div class="row"><div class="field"><label id="lblPlacaBau" for="placaBau">PLACA DO BAÚ / ÚNICA *</label><input id="placaBau" type="text" maxlength="8" disabled></div><div id="cavaloWrap" class="field hidden"><label for="placaCavalo">PLACA DO CAVALO *</label><input id="placaCavalo" type="text" maxlength="8" disabled></div></div>
-                <div class="field"><label for="motorista">MOTORISTA *</label><input id="motorista" type="text" disabled></div>
-                <div class="row"><div class="field"><label for="rg">RG</label><input id="rg" type="text" disabled></div><div class="field"><label for="cnh">CNH</label><input id="cnh" type="text" disabled inputmode="numeric"></div></div>
-                <div class="field"><label for="ajudantes">AJUDANTES</label><input id="ajudantes" type="text" disabled placeholder="Opcional"></div>
-                <div class="field"><label for="materiais">MATERIAIS NA CABINE / VEÍCULO</label><textarea id="materiais" disabled placeholder="Opcional"></textarea></div>
-                <div class="field"><label for="observacoes">OBSERVAÇÕES</label><textarea id="observacoes" disabled placeholder="Opcional"></textarea></div>
-                <div class="check-row"><input id="chkVistoria" type="checkbox"><label id="lblVistoria" for="chkVistoria">☑️ CONFIRMO QUE A VISTORIA FOI REALIZADA.</label></div>
-                <div class="step-nav"><button id="btnEntryBack2" type="button" class="btn btn-secondary">Voltar</button><button id="btnEntryNext2" type="button" class="btn btn-primary" disabled>Avançar</button></div>
-                <button id="btnCancelEntry2" type="button" class="btn btn-ghost">Cancelar</button>
-              </div>
-            </div>
-
-            <div id="stepEntry3" class="wizard-step">
-              <div class="card">
-                <div class="eyebrow">ENTRADA • PASSO 3 DE 3</div><h2>Auditoria final</h2><p class="sub">Registre a selfie de confirmação do vigia com o carimbo dos dados da operação.</p>
-                <div class="summary-grid"><div class="summary-item"><small>Portaria</small><strong id="sumPortaria">-</strong></div><div class="summary-item"><small>Veículo</small><strong id="sumVeiculo">-</strong></div><div class="summary-item"><small>Placa</small><strong id="sumPlaca">-</strong></div><div class="summary-item"><small>Motorista</small><strong id="sumMotorista">-</strong></div></div>
-                <div class="term"><strong>TERMO DE OPERAÇÃO</strong><br><br>O sistema registra os dados do atendimento, horários, confirmações e localização disponível durante a operação. O operador deve seguir o procedimento definido e usar o cancelamento quando necessário.</div>
-                <div class="field"><label for="fileSelfie">SELFIE DE CONFIRMAÇÃO *</label><button id="btnSelfie" type="button" class="btn btn-secondary">🤳 Bater selfie de confirmação</button><input id="fileSelfie" class="file-input" type="file" accept="image/*" capture="user"><img id="previewCarimbo" class="photo-preview" alt="Pré-visualização da selfie carimbada"><canvas id="canvasCarimbo" class="hidden"></canvas></div>
-                <div class="badges"><span class="badge">● GPS ativo</span><span class="badge">Calço confirmado</span><span class="badge">Vistoria confirmada</span></div>
-                <div class="step-nav"><button id="btnEntryBack3" type="button" class="btn btn-secondary">Voltar</button><button id="btnSaveEntry" type="submit" class="btn btn-success" disabled>Salvar entrada</button></div>
-                <button id="btnCancelEntry3" type="button" class="btn btn-ghost">Cancelar</button>
-              </div>
-            </div>
+            <div id="stepEntry1" class="wizard-step active"><div class="card"><div class="eyebrow">ENTRADA • PASSO 1 DE 3</div><h2>Triagem</h2><p class="sub">A imagem vem primeiro. O preenchimento manual só é liberado depois de uma tentativa real de leitura que não resolva os dados.</p><div class="field"><label for="tipoAcesso">TIPO DE ACESSO</label><select id="tipoAcesso"><option value="terceiro" selected>Fornecedor / Terceiro</option><option value="frota">Frota própria</option></select></div><div id="thirdPartyFields"><button id="btnDevTest" type="button" class="btn btn-dev">🧪 Auto-preencher (modo dev)</button><div class="field"><label for="empresa">EMPRESA *</label><input id="empresa" type="text" required disabled autocomplete="organization"></div><div class="field"><label for="tipoVeiculo">TIPO DE VEÍCULO *</label><select id="tipoVeiculo" required disabled><option value="Caminhões & Carretas">Caminhões & Carretas</option><option value="Veículo Pequeno">Veículo Pequeno</option></select></div><div class="field"><label>LEITURA INTELIGENTE</label><div class="ocr-grid"><button id="btnOcrDocumento" type="button" class="btn btn-secondary" disabled>📄 Ler RG / CNH</button><button id="btnOcrPlaca" type="button" class="btn btn-secondary" disabled>🚛 Ler placa</button></div><input id="fileDocumento" class="file-input" type="file" accept="image/*" capture="environment"><input id="filePlacaBau" class="file-input" type="file" accept="image/*" capture="environment"><div id="ocrStatus" class="ocr-box">Aguardando tentativa de leitura.</div><div id="manualEscapeArea" class="hidden"><button id="btnManualEscape" type="button" class="btn btn-outline">Não foi possível ler a imagem</button><div class="manual-note">O modo manual aparece depois de uma tentativa real de OCR sem resultado utilizável.</div></div></div><div class="step-nav single"><button id="btnEntryNext1" type="button" class="btn btn-primary" disabled>Avançar</button><button id="btnCancelEntry1" type="button" class="btn btn-ghost">Cancelar</button></div></div><div id="fleetBranch" class="hidden"><div class="banner success"><strong>Frota própria.</strong><br>Sem romaneio de terceiro. Proceda conforme o fluxo interno.</div><button id="btnFleetGate" type="button" class="btn btn-success">Liberar portão</button><button id="btnFleetBack" type="button" class="btn btn-ghost">Voltar</button></div></div></div>
+            <div id="stepEntry2" class="wizard-step"><div class="card"><div class="eyebrow">ENTRADA • PASSO 2 DE 3</div><h2>Dados e vistoria</h2><div class="row"><div class="field"><label id="lblPlacaBau" for="placaBau">PLACA DO BAÚ / ÚNICA *</label><input id="placaBau" type="text" maxlength="8" disabled></div><div id="cavaloWrap" class="field hidden"><label for="placaCavalo">PLACA DO CAVALO *</label><input id="placaCavalo" type="text" maxlength="8" disabled></div></div><div class="field"><label for="motorista">MOTORISTA *</label><input id="motorista" type="text" disabled></div><div class="row"><div class="field"><label for="rg">RG</label><input id="rg" type="text" disabled></div><div class="field"><label for="cnh">CNH</label><input id="cnh" type="text" disabled inputmode="numeric"></div></div><div class="field"><label for="ajudantes">AJUDANTES</label><input id="ajudantes" type="text" disabled placeholder="Opcional"></div><div class="field"><label for="materiais">MATERIAIS NA CABINE / VEÍCULO</label><textarea id="materiais" disabled placeholder="Opcional"></textarea></div><div class="field"><label for="observacoes">OBSERVAÇÕES</label><textarea id="observacoes" disabled placeholder="Opcional"></textarea></div><div class="check-row"><input id="chkVistoria" type="checkbox"><label id="lblVistoria" for="chkVistoria">☑️ CONFIRMO QUE A VISTORIA FOI REALIZADA.</label></div><div class="step-nav"><button id="btnEntryBack2" type="button" class="btn btn-secondary">Voltar</button><button id="btnEntryNext2" type="button" class="btn btn-primary" disabled>Avançar</button></div><button id="btnCancelEntry2" type="button" class="btn btn-ghost">Cancelar</button></div></div>
+            <div id="stepEntry3" class="wizard-step"><div class="card"><div class="eyebrow">ENTRADA • PASSO 3 DE 3</div><h2>Auditoria final</h2><p class="sub">Registre a selfie de confirmação do vigia com o carimbo dos dados da operação.</p><div class="summary-grid"><div class="summary-item"><small>Portaria</small><strong id="sumPortaria">-</strong></div><div class="summary-item"><small>Veículo</small><strong id="sumVeiculo">-</strong></div><div class="summary-item"><small>Placa</small><strong id="sumPlaca">-</strong></div><div class="summary-item"><small>Motorista</small><strong id="sumMotorista">-</strong></div></div><div class="term"><strong>TERMO DE OPERAÇÃO</strong><br><br>O sistema registra os dados do atendimento, horários, confirmações e localização disponível durante a operação. O operador deve seguir o procedimento definido e usar o cancelamento quando necessário.</div><div class="field"><label for="fileSelfie">SELFIE DE CONFIRMAÇÃO *</label><button id="btnSelfie" type="button" class="btn btn-secondary">🤳 Bater selfie de confirmação</button><input id="fileSelfie" class="file-input" type="file" accept="image/*" capture="user"><img id="previewCarimbo" class="photo-preview" alt="Pré-visualização da selfie carimbada"><canvas id="canvasCarimbo" class="hidden"></canvas></div><div class="badges"><span class="badge">● GPS ativo</span><span class="badge">Calço confirmado</span><span class="badge">Vistoria confirmada</span></div><div class="step-nav"><button id="btnEntryBack3" type="button" class="btn btn-secondary">Voltar</button><button id="btnSaveEntry" type="submit" class="btn btn-success" disabled>Salvar entrada</button></div><button id="btnCancelEntry3" type="button" class="btn btn-ghost">Cancelar</button></div></div>
           </form>
         </section>
-
         <section id="viewDocks" class="view"><div class="card"><div class="eyebrow">SAÍDAS</div><h2>Docas / saídas</h2><p class="sub">Veículos presentes nesta portaria.</p><div id="dockList" class="dock-list"></div><hr class="sep"><button id="btnManualExit" type="button" class="btn btn-danger">Saída manual</button><button id="btnBackMainDocks" type="button" class="btn btn-ghost">Voltar</button></div></section>
-
         <section id="viewExit" class="view"><div class="card"><div class="eyebrow">SAÍDA</div><h2>Auditoria de saída</h2><p class="sub">A liberação depende da vistoria e da confirmação operacional.</p><input id="exitId" type="hidden"><input id="exitManual" value="false" type="hidden"><div id="manualExitWrap" class="field hidden"><label for="manualPlate">PLACA DO BAÚ / ÚNICA *</label><input id="manualPlate" type="text" maxlength="8"></div><div id="exitSummary" class="summary-grid"></div><div class="check-row"><input id="chkVistoriaSaida" type="checkbox"><label for="chkVistoriaSaida">☑️ CONFIRMO A VISTORIA DE SAÍDA.</label></div><button id="btnSaveExit" type="button" class="btn btn-success" disabled>Liberar saída</button><button id="btnCancelExit" type="button" class="btn btn-ghost">Cancelar</button></div></section>
-
         <section id="viewProtocol" class="view"><div class="card"><div class="eyebrow">PROTOCOLO</div><h2>Procedimentos</h2><div class="help-list"><p><strong>1.</strong> O OCR deve ser tentado antes do preenchimento manual.</p><p><strong>2.</strong> Uma falha real libera o modo manual e fica registrada.</p><p><strong>3.</strong> A saída exige a confirmação da vistoria.</p></div><button id="btnReplayProtocol" type="button" class="btn btn-primary">Rever protocolo completo</button><button id="btnBackProtocol" type="button" class="btn btn-ghost">Voltar</button></div></section>
       </div>
-
-      <div id="overlay" class="overlay"><div id="overlayBox" class="modal"><div id="overlayBody"></div></div></div>
-      <div id="toast" class="toast"></div>
+      <div id="overlay" class="overlay"><div id="overlayBox" class="modal"><div id="overlayBody"></div></div></div><div id="toast" class="toast"></div>
     </section>
   </main>
   <script src="js/app.js"></script>
+  <script src="js/placas.js"></script>
 </body>
 </html>
