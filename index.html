@@ -1,25 +1,252 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Romaneio Digital</title>
-  <link rel="icon" href="assets/favicon.png">
-  <link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Romaneio PRO - Farmax</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <style>
+        :root { --fundo: #121212; --card: #1e1e1e; --texto: #f0f2f5; --dourado: #d4af37; --dourado-hover: #b5952f; --alerta: #ffc107; --vermelho: #dc3545; --verde: #198754; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--fundo); margin: 0; padding: 15px; color: var(--texto); }
+        .app-container { background: var(--card); border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.5); padding: 20px; max-width: 500px; margin: 0 auto; border: 1px solid #333; position: relative; }
+        .header-app { text-align: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        h2 { color: var(--dourado); font-weight: 700; margin: 0; font-size: 24px; letter-spacing: 1px; }
+        .assinatura { font-size: 11px; color: #888; font-style: italic; margin-top: -2px; }
+        .relogio { font-size: 14px; font-weight: 600; color: var(--dourado); margin-top: 5px; }
+        .tela, .passo-wizard { display: none; }
+        .tela.ativa, .passo-wizard.ativa { display: block; }
+        .progress-container { width: 100%; background: #333; border-radius: 10px; margin-bottom: 20px; height: 8px; overflow: hidden; display: none; }
+        .progress-bar { height: 100%; background: var(--dourado); width: 33%; transition: width 0.3s ease; }
+        button { width: 100%; padding: 15px; font-size: 15px; font-weight: 700; font-family: 'Poppins'; border: none; border-radius: 8px; margin-bottom: 12px; cursor: pointer; text-transform: uppercase; color: #121212; transition: 0.2s; }
+        button:disabled { background: #555 !important; color: #888 !important; cursor: not-allowed; }
+        .btn-primario { background: var(--dourado); } .btn-primario:active { background: var(--dourado-hover); }
+        .btn-alerta { background: var(--alerta); } .btn-sucesso { background: var(--verde); color: #fff; }
+        .btn-ocr { background: #333; color: var(--dourado); border: 1px solid var(--dourado); font-size: 13px; }
+        .btn-secundario { background: #333; color: #fff; }
+        label { font-weight: 600; display: block; margin-top: 15px; font-size: 13px; color: #aaa; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; font-size: 14px; font-family: 'Poppins'; background: #2a2a2a; color: #fff; }
+        input:focus, select:focus { border-color: var(--dourado); outline: none; }
+        .flex-row { display: flex; gap: 10px; } .flex-row > div { flex: 1; }
+        .card-veiculo { border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 10px; background: #252525; border-left: 5px solid var(--dourado); }
+        .box-vistoria { background: #252525; border: 1px solid var(--dourado); border-radius: 8px; padding: 15px; margin-top: 20px; }
+        .box-resumo { background: #1a1a1a; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed var(--dourado); }
+        .box-resumo span { color: var(--dourado); font-weight: 700; }
+        #overlayBloqueio, #modalCalco { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.95); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; color: var(--dourado); text-align: center; padding: 20px; box-sizing: border-box; touch-action: none; pointer-events: all; }
+        .spinner { border: 5px solid #333; border-top: 5px solid var(--dourado); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .card-calco { background: #1a1a1a; border: 2px solid var(--vermelho); border-radius: 12px; padding: 25px; max-width: 400px; width: 90%; }
+        .card-calco h3 { color: var(--vermelho); margin-top: 0; font-size: 22px; }
+        .card-calco p { color: #fff; font-size: 17px; font-weight: 700; line-height: 1.65; margin-bottom: 25px; }
+    </style>
 </head>
 <body>
-  <header class="site-header">
-    <img src="assets/sentinel-logo.png" alt="Sentinel" class="logo">
-    <h1>Romaneio Digital</h1>
-  </header>
-
-  <main class="container">
-    <p>Bem-vindo ao repositório Romaneio Digital. Substitua este conteúdo pelo seu site.</p>
-    <section class="logos">
-      <img src="assets/domus-logo.png" alt="Domus" class="logo">
-    </section>
-  </main>
-
-  <script src="js/app.js"></script>
+<div id="overlayBloqueio"><div class="spinner"></div><div id="msgBloqueio">AGUARDE...<br>PROCESSANDO DADOS.</div></div>
+<div id="modalCalco">
+    <div class="card-calco">
+        <h3>⚠️ ATENÇÃO</h3>
+        <p>Em conformidade com as normas disponíveis abaixo e para todos, somado à assinatura realizada na folha de termo físico, assumo e confirmo este termo de responsabilidade, garantindo pessoalmente que o veículo está <strong>COMPLETAMENTE PARADO</strong>, com o <strong>MOTOR DESLIGADO</strong> e o <strong>CALÇO NAS RODAS</strong> devidamente posicionado.</p>
+        <button class="btn-alerta" onclick="confirmarCalco()" style="margin-bottom:0;text-transform:none;">Confirmar</button>
+        <button class="btn-secundario" onclick="cancelarCalco()" style="margin-top:15px;">Cancelar Ação</button>
+    </div>
+</div>
+<div class="app-container">
+    <div class="header-app">
+        <h2>ROMANEIO PRO</h2>
+        <div class="assinatura">criado por Daniel Xavier</div>
+        <div class="relogio" id="relogioTopo">--:--:--</div>
+    </div>
+    <div id="telaZero" class="tela ativa">
+        <div style="text-align: center; margin: 30px 0;">
+            <div style="font-size: 50px; margin-bottom: 10px;">📍</div>
+            <h3 style="color: var(--dourado);">Acessando o Sistema...</h3>
+            <p style="font-size: 13px; color: #aaa; line-height: 1.6; padding: 0 10px;">Por questões de segurança para os vigias, motoristas e Farmax, este sistema exige permissão de GPS.</p>
+        </div>
+        <button class="btn-primario" onclick="solicitarGPS()">✅ PERMITIR LOCALIZAÇÃO</button>
+    </div>
+    <div id="telaInicio" class="tela">
+        <label>Sua Portaria:</label>
+        <select id="portariaPainel" style="margin-bottom: 25px;">
+            <option value="P1">Portaria 1</option><option value="P2">Portaria 2</option><option value="P3">Portaria 3</option><option value="Tanques">Tanques</option>
+        </select>
+        <input type="hidden" id="localizacao">
+        <button class="btn-primario" onclick="acionarModalCalco(() => iniciarEntrada())">📥 NOVA ENTRADA</button>
+        <button class="btn-alerta" onclick="abrirDocas()">🚛 VER DOCAS (DAR SAÍDA)</button>
+    </div>
+    <div id="telaEntrada" class="tela">
+        <div class="progress-container" id="barraProgressoBox"><div class="progress-bar" id="barraProgresso"></div></div>
+        <form id="formEntrada">
+            <div id="passo1" class="passo-wizard ativa">
+                <h3 style="color: var(--dourado); text-align: center;">1. Triagem</h3>
+                <label>Empresa *</label><input type="text" id="empresa" required>
+                <label>Tipo de Veículo *</label>
+                <select id="tipoVeiculo" required><option value="Carreta/Caminhão" selected>Carreta / Caminhão</option><option value="Pequeno">Veículo Pequeno</option></select>
+                <label>📄 Leitura Inteligente (Recomendado)</label>
+                <div class="flex-row" style="margin-bottom: 15px;">
+                    <div><button type="button" class="btn-ocr" onclick="document.getElementById('capturaDoc').click()">📸 LER RG/CNH</button></div>
+                    <div><button type="button" class="btn-ocr" onclick="document.getElementById('capturaPlaca').click()">📸 LER PLACA</button></div>
+                </div>
+                <input type="file" id="capturaDoc" accept="image/*" capture="environment" style="display:none" onchange="processarOcr(event, 'doc')">
+                <input type="file" id="capturaPlaca" accept="image/*" capture="environment" style="display:none" onchange="processarOcr(event, 'placa')">
+                <button type="button" class="btn-primario" style="margin-top:20px;" onclick="avancarPasso(1)">AVANÇAR SEM FOTO ➔</button>
+                <button type="button" class="btn-secundario" onclick="voltarInicio()">Cancelar</button>
+            </div>
+            <div id="passo2" class="passo-wizard">
+                <h3 style="color: var(--dourado); text-align: center;">2. Dados e Vistoria</h3>
+                <label>Placa do Baú / Única *</label>
+                <input type="text" id="placaBau" required style="text-transform: uppercase;" oninput="this.value = this.value.replace(/[^a-zA-Z0-9-]/g, '').toUpperCase()">
+                <label>Motorista *</label>
+                <input type="text" id="motorista" required oninput="this.value = this.value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '')">
+                <div class="flex-row">
+                    <div><label>RG</label><input type="text" id="rg" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()"></div>
+                    <div><label>CNH</label><input type="text" id="cnh" oninput="this.value = this.value.replace(/[^0-9]/g, '')"></div>
+                </div>
+                <label>Observações</label><textarea id="observacoes" rows="2"></textarea>
+                <div class="box-vistoria">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #fff; margin-top: 0;">
+                        <input type="checkbox" id="chkVistoria" style="width: 25px; height: 25px;" onchange="validarVistoria()"> 
+                        <strong>☑️ CONFIRMO que a VISTORIA DO VEÍCULO foi realizada conforme o padrão.</strong>
+                    </label>
+                </div>
+                <div class="flex-row" style="margin-top:20px;">
+                    <div><button type="button" class="btn-secundario" onclick="voltarPasso(2)">⬅ Voltar</button></div>
+                    <div><button type="button" class="btn-primario" id="btnAvancarP2" disabled onclick="avancarPasso(2)">AVANÇAR ➔</button></div>
+                </div>
+            </div>
+            <div id="passo3" class="passo-wizard">
+                <h3 style="color: var(--dourado); text-align: center;">3. Auditoria Final</h3>
+                <div class="box-resumo">
+                    <p style="margin: 0 0 5px 0; font-size:12px; color:#aaa;">Confirme antes de bater a foto final:</p>
+                    Placa: <span id="resumoPlaca">--</span> <br> Motorista: <span id="resumoMot">--</span>
+                </div>
+                <button type="button" style="background:#555; color:var(--dourado); border:1px solid var(--dourado);" onclick="document.getElementById('capturaSelfie').click()">📷 BATER FOTO DO MOTORISTA *</button>
+                <input type="file" id="capturaSelfie" accept="image/*" capture="user" style="display:none" onchange="gerarCarimbo(event)">
+                <img id="previewCarimbo" style="width: 100%; border-radius: 8px; margin-top: 5px; display: none; border: 2px solid var(--dourado);">
+                <input type="hidden" id="fotoCarimbadaBase64" required>
+                <canvas id="canvasCarimbo" style="display:none;"></canvas>
+                <button type="submit" class="btn-sucesso" id="btnEnviar" onclick="salvarEntrada(event)" style="margin-top: 20px;">🚀 GRAVAR ENTRADA</button>
+                <button type="button" class="btn-secundario" style="margin-top: 15px;" onclick="voltarPasso(3)">⬅ Voltar</button>
+            </div>
+        </form>
+    </div>
+    <div id="telaSaida" class="tela">
+        <h3 style="text-align: center; color: var(--alerta);">Veículos nas Docas</h3>
+        <div id="listaDocas"></div>
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #444;">
+        <div style="background: #252525; padding: 15px; border-radius: 8px; border: 1px dashed var(--alerta);">
+            <p style="font-size: 12px; color: #aaa; margin-top: 0; text-align: center;">Veículo do turno anterior?</p>
+            <button type="button" class="btn-alerta" onclick="acionarModalCalco(() => abrirSaida(true))" style="margin-bottom:0;">🚨 SAÍDA MANUAL (Não Listado)</button>
+        </div>
+        <button type="button" class="btn-secundario" style="margin-top: 15px;" onclick="voltarInicio()">Voltar ao Início</button>
+    </div>
+    <div id="telaSaidaForm" class="tela">
+        <h3 style="text-align: center; color: var(--alerta);">Auditoria de Saída</h3>
+        <input type="hidden" id="idSaidaOculto">
+        <input type="hidden" id="isSaidaManual">
+        <div id="boxPlacaSaidaManual" style="display: none; margin-bottom: 20px;">
+            <p style="font-size: 12px; color: #aaa;">O sistema buscará a entrada correspondente.</p>
+            <label>Placa do Baú / Única *</label>
+            <input type="text" id="placaSaidaManual" style="text-transform: uppercase;" oninput="this.value = this.value.replace(/[^a-zA-Z0-9-]/g, '').toUpperCase()">
+        </div>
+        <div class="box-vistoria">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #fff; margin-top: 0;">
+                <input type="checkbox" id="chkVistoriaSaida" style="width: 25px; height: 25px;" onchange="validarVistoriaSaida()"> 
+                <strong>☑️ CONFIRMO a VISTORIA DE SAÍDA.</strong>
+            </label>
+        </div>
+        <button type="button" class="btn-sucesso" id="btnSalvarSaida" disabled onclick="salvarSaidaFinal()" style="margin-top: 20px;">✅ CONFIRMAR E LIBERAR</button>
+        <button type="button" class="btn-secundario" style="margin-top: 15px;" onclick="mostrarTela('telaSaida')">Cancelar</button>
+    </div>
+</div>
+<script>
+    const urlApp = "https://script.google.com/macros/s/AKfycbyFgCjb1DRp_-TYMcQ6lqow_JlU9HWUvJpVULi36Syvb2POcYXjN7Cc-8gAbYumhkUS_w/exec";
+    let db = null; let timerTimeout = null; let acaoAposCalco = null;
+    setInterval(() => { document.getElementById('relogioTopo').innerText = new Date().toLocaleTimeString('pt-BR'); }, 1000);
+    function vibrar(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e){} }
+    window.onload = function() {
+        const req = indexedDB.open("FarmaxRomaneioDB", 1);
+        req.onupgradeneeded = e => { db = e.target.result; if(!db.objectStoreNames.contains("fila")) db.createObjectStore("fila", { keyPath: "idLocal" }); };
+        req.onsuccess = e => { db = e.target.result; sincronizarFila(); };
+        setInterval(sincronizarFila, 30000);
+    };
+    function ativarBloqueio(msg) {
+        document.getElementById('msgBloqueio').innerHTML = msg; document.getElementById('overlayBloqueio').style.display = 'flex';
+        if(timerTimeout) clearTimeout(timerTimeout);
+        timerTimeout = setTimeout(() => { desativarBloqueio(); alert("⚠️ Tempo esgotado."); }, 60000);
+    }
+    function desativarBloqueio() { if(timerTimeout) clearTimeout(timerTimeout); document.getElementById('overlayBloqueio').style.display = 'none'; }
+    function mostrarTela(id) { document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa')); document.getElementById(id).classList.add('ativa'); }
+    function acionarModalCalco(acaoCallback) { vibrar(30); acaoAposCalco = acaoCallback; document.getElementById('modalCalco').style.display = 'flex'; }
+    function confirmarCalco() { vibrar([50, 100, 50]); document.getElementById('modalCalco').style.display = 'none'; if(acaoAposCalco) acaoAposCalco(); }
+    function cancelarCalco() { vibrar(50); document.getElementById('modalCalco').style.display = 'none'; acaoAposCalco = null; }
+    function solicitarGPS() {
+        vibrar(50); ativarBloqueio("⏳<br>VERIFICANDO GPS...");
+        if(navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                p => { document.getElementById('localizacao').value = p.coords.latitude + ", " + p.coords.longitude; desativarBloqueio(); mostrarTela('telaInicio'); vibrar([50, 50]); },
+                () => { desativarBloqueio(); alert("⚠️ ACESSO NEGADO. O GPS é obrigatório."); }, { enableHighAccuracy: true, timeout: 15000 }
+            );
+        }
+    }
+    function voltarInicio() {
+        document.getElementById('formEntrada').reset();
+        document.getElementById('chkVistoria').checked = false; document.getElementById('btnAvancarP2').disabled = true;
+        document.getElementById('previewCarimbo').style.display = 'none'; document.getElementById('fotoCarimbadaBase64').value = "";
+        mostrarTela('telaInicio');
+    }
+    function iniciarEntrada() { document.getElementById('barraProgressoBox').style.display = 'block'; mostrarTela('telaEntrada'); irParaPasso(1); }
+    function avancarPasso(atual) {
+        vibrar(30);
+        if(atual === 1) { if(!document.getElementById('empresa').checkValidity()) { document.getElementById('empresa').reportValidity(); return; } irParaPasso(2); }
+        else if(atual === 2) { if(!document.getElementById('placaBau').checkValidity() || !document.getElementById('motorista').checkValidity()) { document.getElementById('formEntrada').reportValidity(); return; } document.getElementById('resumoPlaca').innerText = document.getElementById('placaBau').value.toUpperCase(); document.getElementById('resumoMot').innerText = document.getElementById('motorista').value.toUpperCase(); irParaPasso(3); }
+    }
+    function voltarPasso(atual) { vibrar(30); irParaPasso(atual - 1); }
+    function irParaPasso(num) { document.querySelectorAll('.passo-wizard').forEach(p => p.classList.remove('ativa')); document.getElementById('passo' + num).classList.add('ativa'); const pct = num === 1 ? '33%' : (num === 2 ? '66%' : '100%'); document.getElementById('barraProgresso').style.width = pct; }
+    function validarVistoria() { document.getElementById('btnAvancarP2').disabled = !document.getElementById('chkVistoria').checked; vibrar(30); }
+    function validarVistoriaSaida() { document.getElementById('btnSalvarSaida').disabled = !document.getElementById('chkVistoriaSaida').checked; vibrar(30); }
+    function aplicarFuzzyPlaca(txt) {
+        let limpo = txt.replace(/[^A-Z0-9]/g, ''); if(limpo.length >= 7) { let p = limpo.substring(0,7).split(''); const fixNum = (c) => ({'O':'0','I':'1','L':'1','Z':'2','S':'5','B':'8','G':'6'}[c] || c); const fixLet = (c) => ({'0':'O','1':'I','2':'Z','5':'S','8':'B','6':'G'}[c] || c); p[0]=fixLet(p[0]); p[1]=fixLet(p[1]); p[2]=fixLet(p[2]); p[3]=fixNum(p[3]); p[5]=fixNum(p[5]); p[6]=fixNum(p[6]); return p.join(''); } return txt;
+    }
+    async function processarOcr(e, tipo) {
+        const file = e.target.files[0]; if(!file) return; ativarBloqueio(`⏳<br>LENDO IMAGEM (IA)...`);
+        try {
+            const img = new Image(); img.src = URL.createObjectURL(file); await new Promise(r => img.onload = r); const cv = document.createElement('canvas'); const ctx = cv.getContext('2d'); const scale = 1200 / img.width; cv.width = 1200; cv.height = img.height * scale; ctx.filter = 'grayscale(100%) contrast(300%)'; ctx.drawImage(img, 0, 0, cv.width, cv.height);
+            const worker = await Tesseract.createWorker('por', 1); if(tipo === 'placa') await worker.setParameters({ tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-', tessedit_pageseg_mode: '7' }); else await worker.setParameters({ tessedit_pageseg_mode: '6' });
+            const ret = await worker.recognize(cv.toDataURL('image/jpeg')); const txt = ret.data.text.toUpperCase();
+            if(tipo === 'placa') { const fuzzy = aplicarFuzzyPlaca(txt); const m = fuzzy.match(/[A-Z]{3}[0-9][A-Z0-9][0-9]{2}/); if(m) document.getElementById('placaBau').value = m[0]; }
+            else { const cnh = txt.match(/\b\d{9,11}\b/); const rg = txt.match(/\b\d{1,2}\.?\d{3}\.?\d{3}-?[0-9X]\b/); const linhas = txt.split('\n'); let nome = ""; for(let l of linhas) { if(!l.match(/[0-9]/) && !l.includes("REPUBLICA") && !l.includes("CARTEIRA") && l.trim().length > 5) { nome = l.trim().replace(/[^A-ZÀ-Ÿ\s]/g, ''); break; } } if(rg) document.getElementById('rg').value = rg[0].replace(/[^A-Z0-9]/g,''); if(cnh) document.getElementById('cnh').value = cnh[0]; if(nome) document.getElementById('motorista').value = nome; }
+            await worker.terminate(); vibrar([100, 50, 100]); alert('🚨 LEITURA CONCLUÍDA!\n\nAGORA, REALIZE A VISTORIA DO VEÍCULO.'); avancarPasso(1);
+        } catch(err) { alert('❌ Erro no leitor.'); } finally { desativarBloqueio(); }
+    }
+    function renderizarCarimbo(ev, txtArray) {
+        const img = new Image(); img.onload = function() { const cv = document.getElementById('canvasCarimbo'); const ctx = cv.getContext('2d'); const sc = 800 / img.width; cv.width = 800; cv.height = img.height * sc; ctx.drawImage(img, 0, 0, cv.width, cv.height); ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(0, cv.height - (txtArray.length * 25 + 30), cv.width, (txtArray.length * 25 + 30)); ctx.fillStyle = "#d4af37"; ctx.font = "bold 17px Arial"; let y = cv.height - (txtArray.length * 25); txtArray.forEach((linha, i) => { ctx.fillStyle = i === 0 ? "#d4af37" : "#FFF"; ctx.fillText(linha, 15, y); y+=25; }); const b64 = cv.toDataURL('image/jpeg', 0.6); document.getElementById('fotoCarimbadaBase64').value = b64; const prev = document.getElementById('previewCarimbo'); prev.src = b64; prev.style.display = 'block'; desativarBloqueio(); vibrar(100); };
+        img.src = ev.target.result;
+    }
+    function gerarCarimbo(e) {
+        const f = e.target.files[0]; if(!f) return; ativarBloqueio("⏳<br>GERANDO FOTO..."); const r = new FileReader(); r.onload = ev => renderizarCarimbo(ev, [`EU, ${document.getElementById('motorista').value.toUpperCase()}, CONFIRMO ESTA ENTRADA.`, `EMPRESA: ${document.getElementById('empresa').value.toUpperCase()} | PORT: ${document.getElementById('portariaPainel').value}`, `PLACA: ${document.getElementById('placaBau').value.toUpperCase()} | GPS: ${document.getElementById('localizacao').value}`, `DATA/HORA: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`]); r.readAsDataURL(f);
+    }
+    function salvarEntrada(e) {
+        e.preventDefault(); if(!document.getElementById('chkVistoria').checked) { alert("⚠️ Confirme a vistoria."); return; } if(document.getElementById('fotoCarimbadaBase64').value === "") { alert("⚠️ BATA A FOTO."); return; }
+        ativarBloqueio("🚀<br>SALVANDO ENTRADA..."); const obj = { idLocal: Date.now().toString(), tipoRegistro: "Entrada", portaria: document.getElementById('portariaPainel').value, empresa: document.getElementById('empresa').value, tipoVeiculo: document.getElementById('tipoVeiculo').value, placaBau: document.getElementById('placaBau').value, motorista: document.getElementById('motorista').value, rg: document.getElementById('rg').value, cnh: document.getElementById('cnh').value, localizacao: document.getElementById('localizacao').value, observacoes: document.getElementById('observacoes').value, fotoValidacao: document.getElementById('fotoCarimbadaBase64').value, dataAtual: new Date().toLocaleDateString('pt-BR'), horaAtual: new Date().toLocaleTimeString('pt-BR'), calcoConfirmado: "SIM", vistoriaConfirmada: "SIM", modoRegistro: "App Web", userAgent: navigator.userAgent };
+        let p = JSON.parse(localStorage.getItem('patioApp')) || []; p.push(obj); localStorage.setItem('patioApp', JSON.stringify(p)); salvarNoCofreOffline(obj, true);
+    }
+    function abrirDocas() {
+        vibrar(30); let p = JSON.parse(localStorage.getItem('patioApp')) || []; const port = document.getElementById('portariaPainel').value; const lista = document.getElementById('listaDocas'); const filt = p.filter(v => v.portaria === port); if(filt.length === 0) lista.innerHTML = '<p style="text-align:center; color:#888;">Docas vazias nesta portaria.</p>'; else { lista.innerHTML = ''; filt.forEach(v => lista.innerHTML += `<div class="card-veiculo"><strong>${v.empresa}</strong><br>Mot: ${v.motorista}<br>Placa: <strong style="color:var(--dourado)">${v.placaBau}</strong><br><small>Entrou: ${v.horaAtual}</small><br><button class="btn-sucesso" style="margin-top:10px;" onclick="acionarModalCalco(() => abrirSaida(false, '${v.idLocal}'))">✅ REGISTRAR SAÍDA</button></div>`); }
+        mostrarTela('telaSaida');
+    }
+    function abrirSaida(isManual, idLocal = "") { document.getElementById('idSaidaOculto').value = isManual ? "saida_manual_" + Date.now() : idLocal; document.getElementById('isSaidaManual').value = isManual ? "true" : "false"; document.getElementById('boxPlacaSaidaManual').style.display = isManual ? "block" : "none"; document.getElementById('placaSaidaManual').required = isManual; document.getElementById('chkVistoriaSaida').checked = false; document.getElementById('btnSalvarSaida').disabled = true; mostrarTela('telaSaidaForm'); }
+    function salvarSaidaFinal() {
+        const isManual = document.getElementById('isSaidaManual').value === "true"; const placa = document.getElementById('placaSaidaManual').value; const id = document.getElementById('idSaidaOculto').value; if(isManual && !placa) { alert("⚠️ Informe a placa do veículo."); return; }
+        ativarBloqueio("🚀<br>SALVANDO SAÍDA..."); const obj = { idLocal: id, tipoRegistro: "Saida", isManual: isManual ? "true" : "false", placaBau: isManual ? placa : "", portaria: document.getElementById('portariaPainel').value, dataAtual: new Date().toLocaleDateString('pt-BR'), horaAtual: new Date().toLocaleTimeString('pt-BR'), calcoConfirmado: "SIM (SAÍDA)", vistoriaConfirmada: "SIM (SAÍDA)", modoRegistro: isManual ? "Manual/Orfã" : "Lista Docas", localizacao: document.getElementById('localizacao').value, userAgent: navigator.userAgent };
+        if(!isManual) { let p = JSON.parse(localStorage.getItem('patioApp')) || []; localStorage.setItem('patioApp', JSON.stringify(p.filter(v => v.idLocal !== id))); }
+        salvarNoCofreOffline(obj, false);
+    }
+    function salvarNoCofreOffline(obj, isEntrada) {
+        if (!db) { enviarImediatamente(obj, isEntrada); return; }
+        const tx = db.transaction("fila", "readwrite"); tx.objectStore("fila").put(obj); tx.oncomplete = function() { desativarBloqueio(); alert("✅ SUCESSO!\nSalvo com segurança."); sincronizarFila(); vibrar([100, 100]); if(isEntrada) voltarInicio(); else { document.getElementById('barraProgressoBox').style.display = 'none'; abrirDocas(); } }; tx.onerror = function() { desativarBloqueio(); enviarImediatamente(obj, isEntrada); };
+    }
+    function enviarImediatamente(obj, isEntrada) { fetch(urlApp, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(obj) }).then(() => { desativarBloqueio(); alert("✅ SUCESSO!"); vibrar([100, 100]); if(isEntrada) voltarInicio(); else abrirDocas(); }).catch(() => { desativarBloqueio(); alert("✅ Salvo offline."); if(isEntrada) voltarInicio(); else abrirDocas(); }); }
+    function sincronizarFila() { if (!db || !navigator.onLine) return; db.transaction("fila", "readonly").objectStore("fila").getAll().onsuccess = e => { const itens = e.target.result; if(!itens || itens.length === 0) return; itens.forEach(item => { fetch(urlApp, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(item) }).then(() => { db.transaction("fila", "readwrite").objectStore("fila").delete(item.idLocal); }).catch(() => {}); }); }; }
+</script>
 </body>
 </html>
