@@ -65,3 +65,9 @@ button:focus-visible{outline:3px solid #3e9ee7;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 
 h1,h2,h3,.gateway-title{font-family:Manrope,Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+
+.server-settings{margin-top:18px;padding:12px 14px;background:#eff7fd;border:1px solid #c4dceb;border-radius:10px}
+.server-settings summary{font-weight:750;color:#155d97;font-size:14px;cursor:pointer;min-height:40px;display:list-item;align-content:center}
+.server-settings .field-hint{margin-top:8px;font-size:12px}
+.server-settings .step-nav{position:static;background:transparent;padding-bottom:0}
+.server-settings input{font-size:15px}
