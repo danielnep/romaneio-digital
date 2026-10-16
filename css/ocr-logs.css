@@ -15,3 +15,17 @@
 .ocr-log-event pre{padding:10px;margin-top:6px;max-height:310px;overflow:auto;border:1px solid #2e3844;border-radius:6px;background:#080c11;color:#cbd9e9;font:11px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;tab-size:2}
 .ocr-candidates:empty{display:none}.ocr-candidates{margin-top:10px;border:1px solid #655522;padding:10px;border-radius:7px}.ocr-candidates p{font-size:11px;line-height:1.5}
 @media(max-width:360px){.ocr-log-meta{align-items:flex-start;flex-direction:column;gap:5px}.ocr-log-actions .btn{padding:12px 7px;font-size:11px}}
+
+/* Diagnóstico técnico em painel secundário: visual alinhado ao tema claro. */
+.ocr-header-button{background:#e9f4fe;border:1px solid #a0cbe9;color:#166ca9;font-size:12px;min-height:40px}
+.no-materials-option:has(input:checked){border-color:#78b7d8}
+#materiais:read-only{color:#5a7080;background:#f0f6fb}
+.ocr-live,.ocr-log-event{background:#f2f8fc;border-color:#d3e3ef;color:#294c64}
+.ocr-log-event{border-left-color:#7faecb}.ocr-log-success{border-left-color:#238875}.ocr-log-warn{border-left-color:#bc8639}.ocr-log-error{border-left-color:#d25959}
+.ocr-log-event>strong{font-size:14px;color:#24485f}.ocr-log-stage{font-size:11px;color:#526f84}
+.ocr-log-badge{background:#e8f3fb;border-color:#b7d2e5;color:#326381;font-size:11px}
+.ocr-log-meta{font-size:12px;color:#4b7188}
+.ocr-log-event summary{color:#176eaa;font-size:13px;min-height:38px;padding-block:9px}
+.ocr-log-event pre{background:#eef5fb;border-color:#ccdde9;color:#31556d;font-size:12px}
+.ocr-text-button{font-size:13px;color:#267eb7}
+.ocr-candidates{background:#eef7fd;border-color:#8ac5e8}.ocr-candidates p{font-size:13px}

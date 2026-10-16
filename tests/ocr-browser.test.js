@@ -27,7 +27,7 @@ async function begin() {
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
   browser = await chromium.launch({ headless: true, executablePath: process.env.ROMANEIO_CHROME_BIN || undefined, args: ["--no-sandbox", "--disable-dev-shm-usage", "--ignore-certificate-errors"] });
   context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, timezoneId: "America/Sao_Paulo", ignoreHTTPSErrors: true, geolocation: { latitude: -20.14, longitude: -44.89 }, permissions: ["geolocation", "clipboard-read", "clipboard-write"] });
-  await context.addInitScript(() => { localStorage.setItem("rd_onboarding_done", "true"); });
+  await context.addInitScript(() => { localStorage.setItem("rd_onboarding_done", "true"); sessionStorage.setItem("rd_sync_token","test-session-token"); });
   // Mesmo SDK/modelo remoto, transportado pelo Node para o navegador de teste.
   // O motor e o reconhecimento continuam reais; nenhum resultado OCR é simulado.
   await context.route(/^https:\/\/(cdn\.jsdelivr\.net|tessdata\.projectnaptha\.com|unpkg\.com)\//, async route => {
@@ -35,7 +35,11 @@ async function begin() {
     const body = Buffer.from(await response.arrayBuffer()); network.push({ url: route.request().url(), status: response.status, bytes: body.length, contentType: response.headers.get("content-type") });
     await route.fulfill({ status: response.status, body, contentType: response.headers.get("content-type") || "application/octet-stream", headers: { "access-control-allow-origin": "*" } });
   });
-  await context.route("**/script.google.com/**", async route => { payloads.push(Object.fromEntries(new URLSearchParams(route.request().postData() || ""))); await route.fulfill({ status: 200, body: "ok", headers: { "access-control-allow-origin": "*" } }); });
+  await context.route("**/api/records", async route => {
+     const req=JSON.parse(route.request().postData() || "{}");
+     if(req.payload)payloads.push(req.payload);
+     await route.fulfill({status:201,contentType:"application/json",body:JSON.stringify({ok:true,confirmed:true,operationId:req.operationId,persistedAt:new Date().toISOString()})});
+   });
   page = await context.newPage(); page.on("pageerror", e => errors.push(e.message));
   await page.goto("http://127.0.0.1:" + server.address().port + "/", { waitUntil: "networkidle" });
   assert.equal(await page.evaluate(() => typeof window.Tesseract?.createWorker), "function", "SDK indisponível: " + JSON.stringify({ errors, network }));
@@ -46,7 +50,7 @@ async function begin() {
   await page.click("#btnLiveOcrLogs"); await waitReading();
   assert.equal(await page.inputValue("#placaBau"), "ABC1234");
   let snapshot = await page.evaluate(() => OCRLogs.snapshot());
-  assert(snapshot.events.some(e => e.stage === "texto" && e.details.texto.includes("ABC1234")));
+  assert(snapshot.events.some(e => e.stage === "texto" && e.details.texto === "[dado protegido]"));
   assert(snapshot.events.some(e => e.stage === "luz"));
   success("Tesseract real lê placa antiga e produz logs", { durationMs: snapshot.events.filter(e => e.stage === "fim").at(-1).ms });
   await page.click("#btnBackOcrLogs");
@@ -118,13 +122,13 @@ async function begin() {
   await page.click("#btnBackMainDocks");
   success("saídas mostram porte, placas, portaria e responsável original; envio mantém o vigia da entrada");
   await page.click("#btnOcrLogs");
-  await page.locator("#ocrLogList details").filter({ hasText: "98765432109" }).first().evaluate(element => element.open = true);
+  await page.locator("#ocrLogList details").first().evaluate(element => element.open = true);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   await page.screenshot({ path: path.join(qa, "ocr-logs-mobile.png"), fullPage: true });
   const downloadPromise = page.waitForEvent("download"); await page.click("#btnExportOcrLogs"); const download = await downloadPromise;
   await download.saveAs(path.join(qa, "ocr-export.json"));
   const exported = JSON.parse(fs.readFileSync(path.join(qa, "ocr-export.json"), "utf8"));
-  assert(exported.events.some(e => e.stage === "texto"));
+  assert(exported.events.some(e => e.stage === "texto")); assert.equal(JSON.stringify(exported).includes("98765432109"), false);
   await page.click("#btnCopyOcrLogs"); const copied = await page.evaluate(() => navigator.clipboard.readText()); assert.equal(JSON.parse(copied).version, 1);
   await page.selectOption("#ocrLogLevel", "success"); assert(await page.locator(".ocr-log-success").count() > 0); assert.equal(await page.locator(".ocr-log-info").count(), 0);
   await page.selectOption("#ocrLogLevel", "all");

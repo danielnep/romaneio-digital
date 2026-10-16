@@ -3,10 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "test": "node --test tests/ocr-core.test.js",
-    "test:browser": "node tests/ocr-browser.test.js"
+    "test": "node --test tests/ocr-core.test.js tests/ui-guardian.test.js tests/server.test.js",
+    "test:browser": "node tests/ocr-browser.test.js",
+    "start": "node server.js"
   },
   "devDependencies": {
     "playwright": "1.62.1"
+  },
+  "engines": {
+    "node": ">=22.13.0"
   }
 }
