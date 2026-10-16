@@ -2,7 +2,7 @@
   "use strict";
   const KEY = "rd_ocr_logs_v1", LIMIT = 300;
   let events = [], live = null, returnView = "viewMain", persistTimer = null, renderedKey = "";
-  try { const saved = JSON.parse(localStorage.getItem(KEY) || "[]"); if (Array.isArray(saved)) events = saved.filter(e => e && e.id && e.stage && e.at).slice(-LIMIT); } catch { /* Histórico inválido não impede a operação. */ }
+  try { const saved = JSON.parse(localStorage.getItem(KEY) || "[]"); if (Array.isArray(saved)) events = saved.filter(e => e && e.id && e.stage && e.at).slice(-LIMIT).map(e=>({...e,details:safeDetails(e.details)})); } catch { /* Histórico inválido não impede a operação. */ }
   const listeners = new Set();
   const labels = { documento: "Documento", placa: "Placa", sistema: "Sistema" };
   const el = id => document.getElementById(id);
@@ -12,8 +12,19 @@
     persistTimer = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(events)); } catch { if (el("ocrLogStorage")) el("ocrLogStorage").textContent = "Histórico apenas nesta sessão: armazenamento do aparelho indisponível."; } }, 100);
   }
   function safeDetails(value) {
-    if (!value) return null;
-    return JSON.parse(JSON.stringify(value, (key, item) => typeof item === "string" && item.length > 10000 ? item.slice(0, 10000) + "\n[texto limitado a 10.000 caracteres]" : item));
+    if (value === null || value === undefined) return null;
+    // Remover dados pessoais ANTES da persistência, exibição, cópia e exportação.
+    const sensitive=/^(texto|text|raw|valor|value|placa|motorista|nome|rg|cnh|documento|anterior|novaLeitura)$/i;
+    function mask(item,key="") {
+      if(typeof item==="string"){
+        if(sensitive.test(key))return "[dado protegido]";
+        return item.replace(/\b[A-Z]{3}[- ]?[0-9][A-Z0-9][0-9]{2}\b/gi,"[placa protegida]").replace(/\b[0-9]{7,14}\b/g,"[número protegido]").slice(0,10000);
+      }
+      if(Array.isArray(item))return item.map(x=>mask(x));
+      if(item&&typeof item==="object")return Object.fromEntries(Object.entries(item).map(([k,v])=>[k,mask(v,k)]));
+      return item;
+    }
+    return mask(value);
   }
   function add(run, stage, message, details = null, level = "info") {
     const item = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), runId: run?.id || "sistema", kind: run?.kind || "sistema", target: run?.target || "", at: new Date().toISOString(), ms: run ? Math.round(performance.now() - run.started) : 0, stage, message, level, details: safeDetails(details) };
@@ -80,6 +91,7 @@
     }
   }
   function boot() {
+    persist(); // Substitui registros legados não mascarados por versões protegidas.
     el("btnOcrLogs").onclick = open;
     el("btnEntryOcrLogs").onclick = open;
     el("btnBackOcrLogs").onclick = () => root.showView(returnView);
