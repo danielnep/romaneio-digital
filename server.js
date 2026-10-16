@@ -82,12 +82,12 @@ function handler(req,res){
     if(origin&&allowedOrigins.has(origin)){res.writeHead(204,{"Access-Control-Allow-Origin":origin,"Access-Control-Allow-Methods":"GET,POST,OPTIONS","Access-Control-Allow-Headers":"Authorization,Content-Type","Vary":"Origin"});res.end()}
     else{res.writeHead(403);res.end()}return;
   }
-  if(origin&&!allowedOrigins.has(origin)&&!origin.startsWith("http://localhost:")&&!origin.startsWith("http://127.0.0.1:")){json(res,403,{ok:false,error:"Origem não permitida"});return}
   if(pathname==="/health"){json(res,200,{ok:true});return}
   if(pathname.startsWith("/api/")){api(req,res,pathname,origin).catch(e=>json(res,e.status||500,{ok:false,error:e.status?e.message:"Erro interno de persistência"},origin));return}
   staticFile(req,res,pathname);
 }
 function start(){
+  if(process.env.RAILWAY_ENVIRONMENT&&!process.env.ROMANEIO_DB_PATH)throw Error("Configure ROMANEIO_DB_PATH em um volume Railway persistente.");
   if(!TOKEN||TOKEN.length<24)throw Error("Defina ROMANEIO_SYNC_TOKEN com pelo menos 24 caracteres.");
   database();return http.createServer(handler).listen(PORT,"0.0.0.0",()=>console.log("Romaneio API na porta "+PORT));
 }
