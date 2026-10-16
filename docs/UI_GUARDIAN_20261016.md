@@ -53,7 +53,14 @@ A sintaxe de `js/app.js` e `js/ocr-logs.js` foi verificada; cenários de rascunh
 - Em Railway, criar **serviço separado Romaneio Digital**, com fonte GitHub `danielnep/romaneio-digital` e **volume persistente montado em `/data`**; nunca misturar dados com Rondas Pro.
 - Variáveis obrigatórias no Railway: `ROMANEIO_DB_PATH=/data/romaneio.sqlite`, `ROMANEIO_SYNC_TOKEN=<segredo de no mínimo 24 caracteres>`. `ROMANEIO_ALLOWED_ORIGINS=https://danielnep.github.io` libera o GitHub Pages, se utilizado.
 - No painel do app, configurar o endereço HTTPS do serviço e a chave (em armazenamento somente da sessão). A origem atual é usada por padrão quando o próprio servidor hospeda a interface.
-- A API é `POST /api/records` (gravação), `GET /api/records/:operationId` (verificação), `GET /api/status` (estado com autenticação) e `GET /health` (saúde).
+- A API é `POST /api/records` (gravação), `GET /api/records/:operationId` (verificação), `GET /api/patio?portaria=P1` (pátio consolidado entre aparelhos), `GET /api/status` (estado com autenticação) e `GET /health` (saúde).
 - Se faltar volume configurado no Railway, o servidor **não inicia**, impedindo dados numa pasta efêmera.
 - Não há serviço Romaneio em funcionamento identificado na Railway neste momento. Portanto, até configurar implantação + token, registros continuam locais e a sincronização não ocorrerá.
 
+
+## Pátio e dados anteriores
+
+- A lista de veículos pode ser reconstruída a partir das entradas e saídas confirmadas no banco do servidor. O app consulta o pátio remoto ao abrir Docas e após sincronizar, preservando as operações ainda pendentes no aparelho.
+- Registros e veículos **antigos** existentes somente em outros navegadores, no Google Apps Script ou em planilhas não foram migrados. Para evitar apagá-los, o app não sobrescreve automaticamente um pátio local legado com uma resposta remota vazia.
+- A identificação de atendimentos novos usa UUID, evitando colisão de timestamps entre aparelhos.
+- Confirmar implantação, armazenamento persistente e acesso HTTPS **antes de mesclar na principal**, pois uma atualização do GitHub Pages sem servidor configurado deixaria operações apenas no armazenamento local.
