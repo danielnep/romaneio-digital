@@ -2,7 +2,7 @@
 
 O botão **Logs OCR** no cabeçalho abre o histórico em qualquer tela. Durante uma leitura, **Ver logs em tempo real** mantém o reconhecimento em andamento e mostra o progresso. **Voltar à operação** retorna à tela anterior.
 
-O histórico mostra arquivo e dimensões, avaliação de luz, carregamento do motor/idioma, reutilização do worker, parâmetros de cada tentativa, recorte, texto reconhecido, confiança, candidatos, preenchimento, conflitos e erros. Os detalhes podem ser expandidos. Há filtros, cópia, exportação JSON e limpeza. Até 300 eventos ficam neste aparelho; as imagens não são persistidas no histórico nem enviadas pelo OCR a uma API de reconhecimento.
+O histórico mostra arquivo e dimensões, avaliação de luz, carregamento do motor/idioma, reutilização do worker, parâmetros de cada tentativa, recorte, status do reconhecimento, confiança, candidatos, preenchimento, conflitos e erros. O texto reconhecido e os valores dos campos sensíveis são mascarados antes de gravar, exibir, copiar ou exportar logs. Os detalhes podem ser expandidos. Há filtros, cópia, exportação JSON e limpeza. Logs antigos armazenados neste aparelho também são mascarados na inicialização. Até 300 eventos ficam neste aparelho; as imagens não são persistidas no histórico nem enviadas pelo OCR a uma API de reconhecimento.
 
 ## Fotos durante o dia
 
