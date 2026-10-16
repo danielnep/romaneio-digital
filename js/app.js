@@ -1,4 +1,4 @@
-const CONFIG={vigia:(localStorage.getItem("rd_vigia")||"Daniel"),urlApp:"https://script.google.com/macros/s/AKfycbyFgCjb1DRp_-TYMcQ6lqow_JlU9HWUvJpVULi36Syvb2POcYXjN7Cc8gAbYumhkUS_w/exec",dbName:"RomaneioDigitalDB",dbVersion:1,queueStore:"fila",eventStore:"eventos"};
+const CONFIG={vigia:(localStorage.getItem("rd_vigia")||"Daniel"),dbName:"RomaneioDigitalDB",dbVersion:1,queueStore:"fila",eventStore:"eventos"};
 const state={online:navigator.onLine,active:false,activeId:null,watchId:null,lastPosition:null,battery:null,manualUnlocked:false,ocrDocumentAttempted:false,ocrPlateAttempted:false,ocrDocumentSuccess:false,ocrPlateSuccess:false,fotoCarimbadaBase64:"",selfieTakenAt:null,db:null,ocrBusy:false,ocrEpoch:0,ocrManualUsed:false,ocrResults:{},ocrNextTarget:null,ocrRun:null,ocrManuallyEdited:false,materialsBeforeNone:"",pageHiddenAt:null,exitContext:null,onboarding:{slide:Number(localStorage.getItem("rd_onboarding_slide")||1),done:localStorage.getItem("rd_onboarding_done")==="true",logs:JSON.parse(localStorage.getItem("rd_onboarding_logs")||"{}")}};
 const $=id=>document.getElementById(id),now=()=>new Date(),human=()=>{const d=now();return{data:d.toLocaleDateString("pt-BR"),hora:d.toLocaleTimeString("pt-BR"),iso:d.toISOString()}};
 function toast(msg,ms=2800){const el=$("toast");el.textContent=msg;el.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("show"),ms)}
@@ -10,46 +10,55 @@ function setLoading(title,text="Processando..."){openOverlay(`<div class="loadin
 function updateClock(){const d=now();$("topClock").textContent=d.toLocaleTimeString("pt-BR");$("topStatus").textContent=state.active?(state.online?"ATENDIMENTO • ONLINE":"ATENDIMENTO • OFFLINE"):(state.online?"ONLINE":"OFFLINE");$("mainMonitorStatus").textContent=state.active?(state.online?"Monitoramento ativo":"Monitoramento ativo • sem rede"):"Monitoramento inativo"}
 setInterval(updateClock,1000);updateClock();
 async function openDB(){return new Promise((resolve,reject)=>{if(state.db)return resolve(state.db);const req=indexedDB.open(CONFIG.dbName,CONFIG.dbVersion);req.onupgradeneeded=e=>{const db=e.target.result;if(!db.objectStoreNames.contains(CONFIG.queueStore))db.createObjectStore(CONFIG.queueStore,{keyPath:"id",autoIncrement:true});if(!db.objectStoreNames.contains(CONFIG.eventStore))db.createObjectStore(CONFIG.eventStore,{keyPath:"id",autoIncrement:true})};req.onsuccess=e=>{state.db=e.target.result;resolve(state.db)};req.onerror=()=>reject(req.error)})}
-async function queuePayload(payload,kind="registro"){const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(CONFIG.queueStore,"readwrite"),request=tx.objectStore(CONFIG.queueStore).add({payload,kind,status:"pending",createdAt:now().toISOString()});tx.oncomplete=()=>resolve(request.result);tx.onerror=()=>reject(tx.error)})}
-async function getQueue(){try{const db=await openDB();return await new Promise((resolve,reject)=>{const r=db.transaction(CONFIG.queueStore,"readonly").objectStore(CONFIG.queueStore).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})}catch{return[]}}
-async function markQueueSentUnverified(id){const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(CONFIG.queueStore,"readwrite"),store=tx.objectStore(CONFIG.queueStore);const req=store.get(id);req.onsuccess=()=>{if(req.result){const {payload,...meta}=req.result;store.put({...meta,status:"sent_unverified",sentAt:now().toISOString(),tipoRegistro:payload?.tipoRegistro||"Registro",idLocal:payload?.idLocal||""})}};tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
+async function queuePayload(payload,kind="registro"){const operationId=crypto.randomUUID().replaceAll("-",""),db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(CONFIG.queueStore,"readwrite");tx.objectStore(CONFIG.queueStore).add({payload,kind,operationId,status:"pending",createdAt:now().toISOString()});tx.oncomplete=()=>resolve(operationId);tx.onerror=()=>reject(tx.error)})}
+async function getQueue(){const db=await openDB();return new Promise((resolve,reject)=>{const r=db.transaction(CONFIG.queueStore,"readonly").objectStore(CONFIG.queueStore).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})}
+async function updateQueueOperationId(item){const operationId=crypto.randomUUID().replaceAll("-"),db=await openDB();await new Promise((resolve,reject)=>{const tx=db.transaction(CONFIG.queueStore,"readwrite"),store=tx.objectStore(CONFIG.queueStore),r=store.get(item.id);r.onsuccess=()=>{if(r.result&&!r.result.operationId)store.put({...r.result,operationId})};tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});return operationId}
+async function removeQueue(id){const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(CONFIG.queueStore,"readwrite");tx.objectStore(CONFIG.queueStore).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
 async function logEventLocal(name,data={}){try{const db=await openDB();db.transaction(CONFIG.eventStore,"readwrite").objectStore(CONFIG.eventStore).add({eventName:name,data,at:now().toISOString()})}catch{}}
-async function postPayload(payload,{queueOnFail=true,silent=false}={}){
-  // Cada operação é registrada localmente antes da tentativa de transmissão.
-  // Apps Script com no-cors devolve resposta opaca: transporte não é confirmação de gravação.
-  const id=await queuePayload(payload);
-  if(!navigator.onLine){if(!silent)toast("Registro salvo no aparelho. Envio pendente.");updateMainKPIs();return {queued:true,confirmed:false}}
+function serverBase(){const stored=localStorage.getItem("rd_server_url")||"";return stored?stored.replace(/\/$/,""):location.hostname.endsWith(".github.io")?"":location.origin}
+function syncToken(){return sessionStorage.getItem("rd_sync_token")||""}
+function syncReady(){return Boolean(serverBase()&&syncToken())}
+function syncState(message){if($("serverSyncStatus"))$("serverSyncStatus").textContent=message}
+async function serverRequest(item){
+  if(!syncReady())throw new Error("Servidor não configurado ou chave de sessão ausente.");
+  const url=serverBase()+"/api/records";
+  if(!/^https:\/\//.test(url)&&!/^http:\/\/localhost[:/]/.test(url)&&!/^http:\/\/127\.0\.0\.1[:/]/.test(url))throw new Error("Servidor sem HTTPS.");
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
   try{
-    const body=new URLSearchParams();Object.entries(payload).forEach(([k,v])=>{if(v!==undefined&&v!==null)body.append(k,String(v))});
-    await fetch(CONFIG.urlApp,{method:"POST",mode:"no-cors",body});
-    await markQueueSentUnverified(id);
-    if(!silent)toast("Enviado, aguardando conferência no servidor.");
-    updateMainKPIs();
-    return {queued:false,confirmed:false,sentUnverified:true};
-  }catch(err){
-    if(!silent)toast("Envio pendente. Registro preservado no aparelho.");
-    updateMainKPIs();
-    return {queued:true,confirmed:false,error:err};
-  }
+    const response=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+syncToken()},body:JSON.stringify({operationId:item.operationId,payload:item.payload}),signal:controller.signal});
+    const receipt=await response.json().catch(()=>null);
+    if(!response.ok||!receipt||receipt.ok!==true||receipt.confirmed!==true||receipt.operationId!==item.operationId||!receipt.persistedAt)throw new Error("Servidor não confirmou a gravação (HTTP "+response.status+").");
+    return receipt;
+  }finally{clearTimeout(timeout)}
+}
+async function postPayload(payload,{silent=false}={}){
+  const operationId=await queuePayload(payload);
+  if(navigator.onLine&&syncReady())await syncQueue();
+  const confirmed=!(await getQueue()).some(row=>row.operationId===operationId);
+  if(!silent)toast(confirmed?"Gravado no servidor.":"Salvo no dispositivo; sincronização pendente.");
+  updateMainKPIs();return {queued:!confirmed,confirmed,operationId};
 }
 let syncingQueue=false;
 async function syncQueue(){
-  if(syncingQueue||!navigator.onLine)return;
+  if(syncingQueue||!navigator.onLine||!syncReady())return;
   syncingQueue=true;
   try{
     for(const item of await getQueue()){
-      if(item.status==="sent_unverified")continue; // Sem ACK, nunca retransmitir automaticamente.
+      if(item.status==="sent_unverified")continue;
       try{
-        const body=new URLSearchParams();Object.entries(item.payload||{}).forEach(([k,v])=>{if(v!==undefined&&v!==null)body.append(k,String(v))});
-        await fetch(CONFIG.urlApp,{method:"POST",mode:"no-cors",body});
-        await markQueueSentUnverified(item.id);
-      }catch{break}
+        const operationId=item.operationId||await updateQueueOperationId(item);
+        const receipt=await serverRequest({...item,operationId});
+        await removeQueue(item.id);
+        localStorage.setItem("rd_last_sync",receipt.persistedAt);
+      }catch(error){syncState("Sincronização pendente: "+error.message);break}
     }
-  }finally{syncingQueue=false;updateMainKPIs()}
+    if(!(await getQueue()).some(v=>v.status!=="sent_unverified"))syncState("Todos os registros novos foram confirmados pelo servidor.");
+  }catch(e){syncState("Falha local: "+e.message)}
+  finally{syncingQueue=false;updateMainKPIs()}
 }
 window.addEventListener("online",()=>{state.online=true;updateClock();toast("Conexão restabelecida. Sincronizando...");syncQueue()});window.addEventListener("offline",()=>{state.online=false;updateClock();if(state.active)recordAnomaly("NETWORK_LOST","Perda de conexão durante atendimento",false)});setInterval(syncQueue,30000);
 function getPatio(){try{const v=JSON.parse(localStorage.getItem("rd_patio")||"[]");return Array.isArray(v)?v:[]}catch{return []}}function setPatio(v){localStorage.setItem("rd_patio",JSON.stringify(v));updateMainKPIs()}function addPatio(v){setPatio([...getPatio(),v])}function removePatio(id){setPatio(getPatio().filter(v=>v.idLocal!==id))}
-async function updateMainKPIs(){const port=$("portaria").value;$("kpiPatio").textContent=getPatio().filter(v=>v.portaria===port).length;const queue=await getQueue();$("kpiFila").textContent=queue.filter(v=>v.status!=="sent_unverified").length;if($("kpiUnverified"))$("kpiUnverified").textContent=queue.filter(v=>v.status==="sent_unverified").length}
+async function updateMainKPIs(){try{const port=$("portaria").value;$("kpiPatio").textContent=getPatio().filter(v=>v.portaria===port).length;const queue=await getQueue();$("kpiFila").textContent=queue.filter(v=>v.status!=="sent_unverified").length;$("kpiUnverified").textContent=queue.filter(v=>v.status==="sent_unverified").length}catch{syncState("Armazenamento indisponível. Não finalize registros neste aparelho.")}}
 function currentGps(){return state.lastPosition?`${state.lastPosition.coords.latitude}, ${state.lastPosition.coords.longitude}`:""}
 function setGpsBadge(status){const el=$("entryGpsBadge");if(el){el.textContent=status;el.dataset.status=status==="GPS atualizado"?"ok":"warn"}}
 function getFreshGps(){return new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(p=>{state.lastPosition=p;setGpsBadge("GPS atualizado");resolve(p)},error=>{setGpsBadge("GPS indisponível");reject(error)},{enableHighAccuracy:true,timeout:15000,maximumAge:1000}))}
@@ -289,6 +298,20 @@ $("manualPlate").oninput=()=>{$("chkOrphanExit").checked=false;updateExitSaveBut
 $("chkOrphanExit").onchange=updateExitSaveButton;
 $("btnCancelExit").onclick=()=>{stopMonitoring();showView("viewDocks");renderDocks()};$("btnSaveExit").onclick=async()=>{if(!$('chkVistoriaSaida').checked)return toast("Confirme a vistoria de saída.");await salvarSaida()};
 async function salvarSaida(){try{setLoading("SALVANDO SAÍDA","Registrando hora e localização…");const manual=$("exitManual").value==="true",plate=(manual?(state.exitContext?.placaBau||$("manualPlate").value):state.exitContext?.placaBau||"").trim().toUpperCase(),h=human(),payload={idLocal:$("exitId").value||"",tipoRegistro:"Saida",isManual:manual?"true":"false",portaria:$("portaria").value,placaBau:plate,empresa:state.exitContext?.empresa||"",motorista:state.exitContext?.motorista||"",tipoVeiculo:state.exitContext?.tipoVeiculo||"",placaCavalo:state.exitContext?.placaCavalo||"",localizacao:currentGps(),vigia:CONFIG.vigia,vigiaEntrada:state.exitContext?.vigiaEntrada||state.exitContext?.vigia||"",porteVeiculo:state.exitContext?vehicleSize(state.exitContext):"",dataAtual:h.data,horaAtual:h.hora,calcoConfirmado:"SIM (SAÍDA)",vistoriaConfirmada:"SIM (SAÍDA)",modoRegistro:manual?(state.exitContext?"Manual / vinculada":"Manual / Órfã"):"Saída Expressa"};const delivery=await postPayload(payload,{silent:true});if(state.exitContext?.idLocal)removePatio(state.exitContext.idLocal);stopMonitoring();closeOverlay();showView("viewDocks");renderDocks();toast(delivery.queued?"Saída salva no aparelho; envio pendente.":"Saída enviada; confirme recebimento no servidor.")}catch{closeOverlay();stopMonitoring();showView("viewDocks");toast("Falha na saída; confira a fila local antes de continuar.")}}
+function initializeServerControls(){
+  $("serverUrl").value=localStorage.getItem("rd_server_url")||(!location.hostname.endsWith(".github.io")?location.origin:"");
+  $("serverToken").value=syncToken();
+  syncState(syncReady()?"Servidor configurado. Sincronização disponível.":"Configure endereço e chave do servidor. Registros ficam no aparelho.");
+  $("btnSaveServer").onclick=()=>{
+    let url;try{url=new URL($("serverUrl").value.trim())}catch{return toast("Endereço do servidor inválido.")}
+    if(url.protocol!=="https:"&&url.hostname!=="localhost"&&url.hostname!=="127.0.0.1")return toast("O servidor precisa usar HTTPS.");
+    if(!$("serverToken").value.trim())return toast("Informe a chave de sincronização.");
+    localStorage.setItem("rd_server_url",url.origin);sessionStorage.setItem("rd_sync_token",$("serverToken").value.trim());
+    syncState("Conferindo registros pendentes...");syncQueue();
+  };
+  $("btnSyncNow").onclick=()=>{if(!syncReady())return toast("Configure o servidor e a chave.");syncQueue()};
+}
+initializeServerControls();
 $("portaria").onchange=updateMainKPIs;$("vigiaOperacao").value=CONFIG.vigia;
 $("vigiaOperacao").onchange=()=>{if(state.active){$("vigiaOperacao").value=CONFIG.vigia;return toast("Encerre o atendimento antes de trocar o responsável.")}const name=$("vigiaOperacao").value.trim();if(name.length<2){$("vigiaOperacao").value=CONFIG.vigia;return toast("Informe o nome do responsável.")}CONFIG.vigia=name;localStorage.setItem("rd_vigia",name);toast("Responsável atualizado.")};
 window.addEventListener("load",async()=>{try{await openDB()}catch{}updateMainKPIs();syncQueue();offerDraft()});
