@@ -60,8 +60,47 @@ document.addEventListener("visibilitychange",()=>{if(!state.active)return;if(doc
 function saveOnboarding(){localStorage.setItem("rd_onboarding_slide",String(state.onboarding.slide));localStorage.setItem("rd_onboarding_done",String(state.onboarding.done));localStorage.setItem("rd_onboarding_logs",JSON.stringify(state.onboarding.logs))}
 function showOnboardSlide(n){state.onboarding.slide=n;[1,2,3].forEach(i=>$("onboard"+i).classList.toggle("active",i===n));[1,2,3].forEach(i=>$("obp"+i).classList.toggle("active",i<=n));saveOnboarding()}
 async function acceptSlide(n){state.onboarding.logs[`slide${n}`]=human().iso;await logEventLocal("ONBOARDING_ACCEPTED",{step:n});saveOnboarding()}
-$("btnGatewayStart").onclick=()=>{if(state.onboarding.done){showView("viewMain");updateMainKPIs()}else{showView("viewOnboarding");showOnboardSlide(Math.min(3,Math.max(1,state.onboarding.slide||1)))}};
-$("obNext1").onclick=async()=>{await acceptSlide(1);showOnboardSlide(2)};$("obNext2").onclick=async()=>{await acceptSlide(2);showOnboardSlide(3)};$("obFinalCheck").onchange=e=>$("obFinish").disabled=!e.target.checked;$("obFinish").onclick=async()=>{if(!$("obFinalCheck").checked)return;await acceptSlide(3);state.onboarding.done=true;saveOnboarding();showView("viewMain");updateMainKPIs()};$("btnProtocolo").onclick=()=>showView("viewProtocol");$("btnBackProtocol").onclick=()=>showView("viewMain");$("btnReplayProtocol").onclick=()=>{state.onboarding.done=false;state.onboarding.slide=1;$("obFinalCheck").checked=false;$("obFinish").disabled=true;saveOnboarding();showView("viewOnboarding");showOnboardSlide(1)};
+$("btnGatewayStart").onclick=()=>{if(state.onboarding.done){showView("viewMain");updateMainKPIs();offerDraft()}else{showView("viewOnboarding");showOnboardSlide(Math.min(3,Math.max(1,state.onboarding.slide||1)))}};
+$("obNext1").onclick=async()=>{await acceptSlide(1);showOnboardSlide(2)};$("obNext2").onclick=async()=>{await acceptSlide(2);showOnboardSlide(3)};$("obFinalCheck").onchange=e=>$("obFinish").disabled=!e.target.checked;$("obFinish").onclick=async()=>{if(!$("obFinalCheck").checked)return;await acceptSlide(3);state.onboarding.done=true;saveOnboarding();showView("viewMain");updateMainKPIs();offerDraft()};$("btnProtocolo").onclick=()=>showView("viewProtocol");$("btnBackProtocol").onclick=()=>showView("viewMain");$("btnReplayProtocol").onclick=()=>{state.onboarding.done=false;state.onboarding.slide=1;$("obFinalCheck").checked=false;$("obFinish").disabled=true;saveOnboarding();showView("viewOnboarding");showOnboardSlide(1)};
+const DRAFT_KEY="rd_entry_draft_v2",DRAFT_FIELDS=["tipoAcesso","empresa","tipoVeiculo","placaBau","placaCavalo","motorista","rg","cnh","ajudantes","materiais","observacoes"];
+function readDraft(){try{const d=JSON.parse(localStorage.getItem(DRAFT_KEY)||"null");if(!d||d.version!==2||Date.now()-d.updatedAt>86400000){localStorage.removeItem(DRAFT_KEY);return null}return d}catch{return null}}
+function offerDraft(){const d=readDraft();$("resumeDraft").classList.toggle("hidden",!d);if(d)$("resumeDraftAge").textContent="Atendimento interrompido • "+new Date(d.updatedAt).toLocaleString("pt-BR")}
+function clearDraft(){localStorage.removeItem(DRAFT_KEY);offerDraft()}
+function saveDraft(){
+  if(!state.active||!$("viewEntry").classList.contains("active"))return;
+  try{
+    const values=Object.fromEntries(DRAFT_FIELDS.map(id=>[id,$(id).value]));
+    localStorage.setItem(DRAFT_KEY,JSON.stringify({version:2,updatedAt:Date.now(),activeId:state.activeId,portaria:$("portaria").value,values,step:$("stepEntry3").classList.contains("active")?3:$("stepEntry2").classList.contains("active")?2:1,vistoria:$("chkVistoria").checked,noMaterials:$("chkNoMaterials").checked,materialsBeforeNone:state.materialsBeforeNone,manualUnlocked:state.manualUnlocked,ocrDocumentAttempted:state.ocrDocumentAttempted,ocrPlateAttempted:state.ocrPlateAttempted,ocrManualUsed:state.ocrManualUsed,ocrDocumentSuccess:state.ocrDocumentSuccess,ocrPlateSuccess:state.ocrPlateSuccess}));
+  }catch{toast("Armazenamento cheio: rascunho não preservado.")}
+}
+async function resumeDraft(){
+  const d=readDraft();if(!d)return offerDraft();
+  openCalco(async()=>{
+    try{
+      setLoading("RETOMANDO ATENDIMENTO","Validando localização...");
+      resetEntry();$("portaria").value=d.portaria||"P1";state.activeId=d.activeId||Date.now().toString();
+      await startMonitoring();
+      $("tipoAcesso").value=d.values.tipoAcesso||"terceiro";$("tipoAcesso").dispatchEvent(new Event("change"));
+      state.ocrDocumentAttempted=!!d.ocrDocumentAttempted;state.ocrPlateAttempted=!!d.ocrPlateAttempted;
+      state.ocrManualUsed=!!d.ocrManualUsed;state.ocrDocumentSuccess=!!d.ocrDocumentSuccess;state.ocrPlateSuccess=!!d.ocrPlateSuccess;
+      if(d.manualUnlocked)unlockEntryFields();
+      DRAFT_FIELDS.forEach(id=>{if(d.values[id]!==undefined)$(id).value=d.values[id]});
+      updateVehicleTypeFields();$("chkNoMaterials").checked=!!d.noMaterials;
+      state.materialsBeforeNone=d.materialsBeforeNone||"";$("materiais").readOnly=!!d.noMaterials;
+      $("chkVistoria").checked=!!d.vistoria;$("btnOcrDocumento").disabled=false;$("btnOcrPlaca").disabled=false;
+      $("ocrStatus").textContent="Rascunho recuperado. Revise os dados e refaça a selfie.";
+      closeOverlay();showView("viewEntry");
+      if(d.step>=2){$("stepEntry1").classList.remove("active");$("stepEntry2").classList.add("active");$("entryProgress").style.width="66%"}
+      updateEntryButton();
+      if(d.step===3&&!$("btnEntryNext2").disabled)$("btnEntryNext2").click();
+      toast("Atendimento retomado. Selfie precisa ser refeita.");saveDraft();
+    }catch{closeOverlay();stopMonitoring();showView("viewMain");offerDraft();toast("GPS indisponível. Rascunho preservado.")}
+  });
+}
+$("btnResumeDraft").onclick=resumeDraft;
+$("entryForm").addEventListener("input",saveDraft);
+$("entryForm").addEventListener("change",saveDraft);
+$("entryForm").addEventListener("click",e=>{if(e.target.closest(".step-nav button"))queueMicrotask(saveDraft)});
 function resetEntry(){if(state.ocrBusy)RomaneioOCR.cancel();state.ocrEpoch++;state.materialsBeforeNone="";$("materiais").readOnly=false;$("chkNoMaterials").disabled=true;state.ocrManualUsed=false;state.ocrManuallyEdited=false;state.ocrResults={};state.ocrRun=null;state.ocrNextTarget=null;$("ocrCandidateArea").replaceChildren();$("ocrPlateTarget").value="placaBau";$("entryForm").reset();state.manualUnlocked=false;state.ocrDocumentAttempted=false;state.ocrPlateAttempted=false;state.ocrDocumentSuccess=false;state.ocrPlateSuccess=false;state.fotoCarimbadaBase64="";state.selfieTakenAt=null;state.ocrBusy=false;$("manualEscapeArea").classList.add("hidden");$("ocrStatus").textContent="Aguardando tentativa de leitura.";["empresa","tipoVeiculo"].forEach(id=>$(id).disabled=false);["placaBau","placaCavalo","motorista","rg","cnh","ajudantes","materiais","observacoes"].forEach(id=>$(id).disabled=true);$("btnEntryNext1").disabled=true;$("btnEntryNext2").disabled=true;$("btnSaveEntry").disabled=true;$("previewCarimbo").style.display="none";$("previewCarimbo").src="";$("stepEntry1").classList.add("active");$("stepEntry2").classList.remove("active");$("stepEntry3").classList.remove("active");$("entryProgress").style.width="33%";$("tipoAcesso").value="terceiro";$("thirdPartyFields").classList.remove("hidden");$("fleetBranch").classList.add("hidden");updateVehicleTypeFields()}
 function openCalco(callback){vibrar(25);openOverlay(`<h3>⚠️ Atenção</h3><p>Em conformidade com as normas disponíveis abaixo e para todos, somado à assinatura realizada na folha de termo físico, assumo e confirmo este termo de responsabilidade, garantindo pessoalmente que o veículo está <strong>COMPLETAMENTE PARADO</strong>, com o <strong>MOTOR DESLIGADO</strong> e o <strong>CALÇO NAS RODAS</strong> devidamente posicionado.</p><button id="modalConfirm" type="button" class="btn btn-primary">Confirmar</button><button id="modalCancel" type="button" class="btn btn-ghost">Cancelar Ação</button>`);$("modalConfirm").onclick=()=>{vibrar(60);closeOverlay();callback()};$("modalCancel").onclick=closeOverlay}
 function openVistoria(callback,saida=false,onCancel=null){const texto=saida?"📋 VISTORIA OBRIGATÓRIA: confirme a vistoria de saída conforme o procedimento da operação.":($("tipoVeiculo").value==="Veículo Pequeno"?"📋 VISTORIA OBRIGATÓRIA: confirme que vistoriou a FRENTE e a CARGA do veículo.":"📋 VISTORIA OBRIGATÓRIA: confirme que vistoriou APENAS A CABINE do caminhão.");openOverlay(`<h3>${saida?"VISTORIA DE SAÍDA":"VISTORIA DO VEÍCULO"}</h3><p>${texto}</p><label class="check-row"><input id="modalVistoriaCheck" type="checkbox"><span>☑️ CONFIRMO QUE A VISTORIA FOI REALIZADA.</span></label><button id="modalVistoriaGo" type="button" class="btn btn-primary" disabled>Continuar</button><button id="modalVistoriaCancel" type="button" class="btn btn-ghost">Voltar sem confirmar</button>`);$("modalVistoriaCheck").onchange=e=>$("modalVistoriaGo").disabled=!e.target.checked;$("modalVistoriaGo").onclick=()=>{closeOverlay();callback()};$("modalVistoriaCancel").onclick=()=>{closeOverlay();onCancel?.()}}
@@ -157,7 +196,16 @@ function validEntryData() {
   const core = RomaneioOcrCore, truck = $("tipoVeiculo").value === "Caminhões & Carretas";
   return $("empresa").value.trim().length >= 2 && core.validPlate(core.compact($("placaBau").value)) && $("motorista").value.trim().length >= 2 && (!truck || core.validPlate(core.compact($("placaCavalo").value))) && ($("chkNoMaterials").checked || $("materiais").value.trim().length > 0);
 }
-function updateEntryDataButton() { $("btnEntryNext2").disabled = !(validEntryData() && $("chkVistoria").checked && !state.ocrBusy); }
+function updateEntryDataButton(){
+  $("btnEntryNext2").disabled=!(validEntryData()&&$("chkVistoria").checked&&!state.ocrBusy);
+  const missing=[],core=RomaneioOcrCore,truck=$("tipoVeiculo").value==="Caminhões & Carretas";
+  if(!core.validPlate(core.compact($("placaBau").value)))missing.push("placa do veículo");
+  if(truck&&!core.validPlate(core.compact($("placaCavalo").value)))missing.push("placa do cavalo");
+  if($("motorista").value.trim().length<2)missing.push("motorista");
+  if(!$("chkNoMaterials").checked&&!$("materiais").value.trim())missing.push("materiais ou confirmação de ausência");
+  if(!$("chkVistoria").checked)missing.push("confirmação da vistoria");
+  $("entryMissingFields").textContent=missing.length?"Para avançar: "+missing.join(", ")+".":"Dados conferidos. Pode avançar.";
+}
 $("chkNoMaterials").addEventListener("change", event => {
   const field = $("materiais"), checked = event.target.checked;
   if (checked) { state.materialsBeforeNone = field.value; field.value = "Nenhum material encontrado"; }
@@ -170,7 +218,7 @@ $("materiais").addEventListener("input", updateEntryDataButton);
 
 function unlockEntryFields(){state.manualUnlocked=true;$("chkNoMaterials").disabled=false;$("materiais").readOnly=$("chkNoMaterials").checked;["empresa","tipoVeiculo","placaBau","placaCavalo","motorista","rg","cnh","ajudantes","materiais","observacoes"].forEach(id=>$(id).disabled=false);updateVehicleTypeFields()}
 function updateVehicleTypeFields(){const truck=$("tipoVeiculo").value==="Caminhões & Carretas";$("cavaloWrap").classList.toggle("hidden",!truck);$("placaCavalo").required=truck;$("lblPlacaBau").textContent=truck?"PLACA DO BAÚ / CARRETA *":"PLACA DO VEÍCULO *";$("lblVistoria").textContent=truck?"☑️ CONFIRMO QUE VISTORIEI APENAS A CABINE DO CAMINHÃO.":"☑️ CONFIRMO QUE VISTORIEI A FRENTE E A CARGA DO VEÍCULO.";$("ocrPlateCavaloOption").disabled=!truck;$("btnOcrPlacaCavaloReview").classList.toggle("hidden",!truck);if(!truck&&$("ocrPlateTarget").value==="placaCavalo")$("ocrPlateTarget").value="placaBau";updateOcrPlateSuccess()}
-function updateEntryButton(){const attempted=state.ocrDocumentAttempted||state.ocrPlateAttempted;$("btnEntryNext1").disabled=!(state.manualUnlocked&&$("empresa").value.trim().length>=2&&attempted&&!state.ocrBusy);updateEntryDataButton()}
+function updateEntryButton(){const attempted=state.ocrDocumentAttempted||state.ocrPlateAttempted;$("btnEntryNext1").disabled=!(state.manualUnlocked&&$("empresa").value.trim().length>=2&&attempted&&!state.ocrBusy);const missing=[];if(!attempted)missing.push("faça uma leitura de documento ou placa");if(!state.manualUnlocked&&attempted)missing.push("confirme a leitura ou libere o modo manual");if($("empresa").value.trim().length<2)missing.push("informe a empresa");$("entryTriagemHint").textContent=missing.length?"Para avançar: "+missing.join("; ")+".":"Triagem pronta para revisão.";updateEntryDataButton()}
 ["empresa","placaBau","placaCavalo","motorista"].forEach(id=>$(id).addEventListener("input",updateEntryButton));$("tipoVeiculo").addEventListener("change",()=>{$("chkVistoria").checked=false;updateVehicleTypeFields();updateEntryButton()});
 $("btnOcrDocumento").onclick=()=>$("fileDocumento").click();$("btnOcrPlaca").onclick=()=>$("filePlacaBau").click();$("fileDocumento").onchange=e=>{const file=e.target.files[0];e.target.value="";processarOcr(file,"documento")};$("filePlacaBau").onchange=e=>{const file=e.target.files[0],target=state.ocrNextTarget||$("ocrPlateTarget").value;e.target.value="";state.ocrNextTarget=null;processarOcr(file,"placa",target)};$("btnOcrDocumentoReview").onclick=()=>$("fileDocumento").click();$("btnOcrPlacaBauReview").onclick=()=>{state.ocrNextTarget="placaBau";$("filePlacaBau").click()};$("btnOcrPlacaCavaloReview").onclick=()=>{state.ocrNextTarget="placaCavalo";$("filePlacaBau").click()};
 $("btnManualEscape").onclick=()=>{openOverlay(`<h3>⚠️ MODO MANUAL</h3><p>A tentativa por imagem não produziu dados utilizáveis. O preenchimento manual será liberado e o registro ficará marcado para conferência.</p><button id="confirmManual" type="button" class="btn btn-primary">Ciente e liberar</button>` ,"danger");$("confirmManual").onclick=async()=>{state.ocrManualUsed=true;unlockEntryFields();OCRLogs.add(state.ocrRun,"modo_manual","Modo manual autorizado pelo operador",{idAtendimento:state.activeId},"warn");await logEventLocal("OCR_MANUAL_ENABLED",{idLocal:state.activeId,runId:state.ocrRun?.id||""});closeOverlay();updateEntryButton();toast("Modo manual liberado e registrado.")}};
