@@ -53,6 +53,25 @@ async function api(req,res,pathname,origin){
     const saved=conn.prepare("SELECT operation_id,saved_at FROM operations WHERE operation_id=?").get(data.operationId);
     json(res,201,{ok:true,confirmed:true,operationId:saved.operation_id,persistedAt:saved.saved_at},origin);return;
   }
+  if(req.method==="GET"&&pathname==="/api/patio"){
+    const rows=database().prepare("SELECT tipo_registro,payload_json FROM operations WHERE tipo_registro IN ('Entrada','Saida') ORDER BY saved_at ASC,rowid ASC").all();
+    const patio=new Map();
+    for(const row of rows){
+      let p;try{p=JSON.parse(row.payload_json)}catch{continue}
+      const key=String(p.idLocal||"");
+      if(row.tipo_registro==="Entrada"&&key){
+        patio.set(key,{idLocal:key,portaria:p.portaria||"",empresa:p.empresa||"",tipoVeiculo:p.tipoVeiculo||"",placaBau:p.placaBau||"",placaCavalo:p.placaCavalo||"",motorista:p.motorista||"",vigiaEntrada:p.vigiaEntrada||p.vigia||"",porteVeiculo:p.porteVeiculo||"",horaAtual:p.horaAtual||"",dataAtual:p.dataAtual||""});
+      }else if(row.tipo_registro==="Saida"){
+        if(key&&patio.has(key))patio.delete(key);
+        else for(const [id,vehicle] of patio){
+          if(vehicle.portaria===p.portaria && (vehicle.placaBau===p.placaBau || vehicle.placaCavalo===p.placaBau)){patio.delete(id);break}
+        }
+      }
+    }
+    const portaria=new URL(req.url,"http://127.0.0.1").searchParams.get("portaria");
+    const vehicles=[...patio.values()].filter(v=>!portaria||v.portaria===portaria);
+    json(res,200,{ok:true,vehicles},origin);return;
+  }
   if(req.method==="GET"&&pathname.startsWith("/api/records/")){
     const id=decodeURIComponent(pathname.slice("/api/records/".length));
     if(!validId(id)){json(res,400,{ok:false,error:"Identificador inválido"},origin);return}
