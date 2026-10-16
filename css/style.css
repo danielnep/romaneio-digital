@@ -63,3 +63,5 @@ button:focus-visible{outline:3px solid #3e9ee7;outline-offset:3px}
   .ocr-grid{gap:7px}.ocr-grid .btn{padding:10px 5px;font-size:12px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+h1,h2,h3,.gateway-title{font-family:Manrope,Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
