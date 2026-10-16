@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0a0b0d">
+  <meta name="theme-color" content="#f7fafc">
   <meta name="mobile-web-app-capable" content="yes">
   <title>Romaneio Digital</title>
   <link rel="stylesheet" href="css/style.css">
@@ -66,11 +66,18 @@
             <h2>Operação</h2>
             <p class="sub">Confirme quem está operando e selecione a portaria.</p><div class="field"><label for="vigiaOperacao">VIGIA RESPONSÁVEL</label><input id="vigiaOperacao" type="text" maxlength="80" autocomplete="name" aria-describedby="vigiaNote"><p id="vigiaNote" class="field-hint">Este nome será registrado nas entradas e saídas.</p></div>
             <div class="field"><label for="portaria">PORTARIA EM OPERAÇÃO</label><select id="portaria"><option value="P1">Portaria 1</option><option value="P2">Portaria 2</option><option value="P3">Portaria 3</option><option value="Tanques">Tanques</option></select></div>
-            <div class="kpis"><div class="kpi"><strong id="kpiPatio">0</strong><span>No pátio</span></div><div class="kpi"><strong id="kpiFila">0</strong><span>Envio pendente</span></div><div class="kpi"><strong id="kpiUnverified">0</strong><span>Envios sem confirmação</span></div></div>
+            <div class="kpis"><div class="kpi"><strong id="kpiPatio">0</strong><span>No pátio</span></div><div class="kpi"><strong id="kpiFila">0</strong><span>Envio pendente</span></div><div class="kpi"><strong id="kpiUnverified">0</strong><span>Envios antigos a conferir</span></div></div>
             <div id="resumeDraft" class="resume-draft hidden" role="status"><strong>Há um atendimento a retomar</strong><p id="resumeDraftAge"></p><p>A selfie precisará ser refeita.</p><button id="btnResumeDraft" type="button" class="btn btn-secondary">Retomar atendimento</button></div><button id="btnNovo" class="btn btn-primary">Novo atendimento</button>
             <button id="btnDocas" class="btn btn-secondary">Docas / dar saída</button>
             <button id="btnProtocolo" class="btn btn-outline">Consultar protocolo</button>
             <div id="mainMonitorStatus" class="small-status">Monitoramento inativo</div>
+            <details class="server-settings"><summary><span aria-hidden="true">↻</span> Sincronização com servidor</summary>
+              <p class="field-hint">O aparelho guarda o registro primeiro e envia ao banco do servidor quando houver conexão. Só aparece como concluído após confirmação.</p>
+              <div class="field"><label for="serverUrl">ENDEREÇO HTTPS DO SERVIDOR</label><input id="serverUrl" type="url" inputmode="url" autocomplete="url" placeholder="https://servidor.up.railway.app"></div>
+              <div class="field"><label for="serverToken">CHAVE DE SINCRONIZAÇÃO</label><input id="serverToken" type="password" autocomplete="off" placeholder="Chave do servidor"><p class="manual-note">A chave fica somente nesta sessão do navegador.</p></div>
+              <p id="serverSyncStatus" class="field-hint" role="status" aria-live="polite">Verificando configuração…</p>
+              <div class="step-nav"><button id="btnSaveServer" type="button" class="btn btn-primary">Conectar ao servidor</button><button id="btnSyncNow" type="button" class="btn btn-secondary">Sincronizar agora</button></div>
+            </details>
           </div>
         </section>
 
