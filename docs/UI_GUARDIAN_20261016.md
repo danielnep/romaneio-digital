@@ -6,7 +6,7 @@ Escopo: branch isolada para revisão, sem publicação automática e sem mudanç
 
 1. **Frota própria:** finalização do monitoramento GPS ao terminar a ação, inclusive em erro de gravação local; o texto evita afirmar abertura física do portão.
 2. **Envios:** gravação local antes de transmitir; fila offline preservada; registros enviados por `no-cors` marcados **sem confirmação** (não como sucesso remoto). Pendências só são retransmitidas enquanto não houver envio opaco concluído.
-3. **Modo de desenvolvimento:** controle de auto-preenchimento oculto da interface operacional.
+3. **Modo de desenvolvimento:** controle e rotina de auto-preenchimento removidos da interface operacional.
 4. **Rascunho:** dados do atendimento atual armazenados localmente, com expiração em 24 horas, botão de retomada, recuperação de etapa e nova aquisição de GPS. Selfie deve ser refeita ao retomar.
 5. **Saída manual:** validação de placa; procura local por placa do baú ou do cavalo na portaria; vincula uma entrada única antes de liberar; bloqueia múltiplas entradas ambíguas; exige confirmação explícita quando não houver entrada neste aparelho.
 6. **Responsável:** identificação visível e editável de vigia, persistida neste aparelho, em lugar da atribuição invariável a Daniel.
@@ -20,7 +20,7 @@ Escopo: branch isolada para revisão, sem publicação automática e sem mudanç
 - O backend é um Google Apps Script externo, não versionado neste repositório. **`fetch(..., {mode:"no-cors"})` não permite verificar se a planilha gravou a operação.** Os estados de interface agora refletem essa limitação, mas confirmação end-to-end exigirá um endpoint do servidor com resposta verificável, autenticação e idempotência. Uma conexão interrompida exatamente entre transmissão e atualização local ainda pode exigir reconciliação manual.
 - Registros enviados sem resposta verificável retêm apenas metadados mínimos na fila, sem o conteúdo pessoal da requisição. Pendências de transmissão permanecem no aparelho até serem enviadas. As opções do navegador podem apagar os dados locais.
 - A retomada de rascunho usa armazenamento local do navegador; em aparelhos compartilhados, exige controle de acesso ao dispositivo e política de limpeza. A selfie não é restaurada.
-- O botão de modo DEV continua implementado em JavaScript para testes, mas não aparece na interface. **Antes de uma implantação sensível, é recomendado remover ou bloquear sua função no bundle de produção**, não apenas ocultá-la visualmente.
+- A rotina de auto-preenchimento DEV foi retirada do código de produção; os testes usam seus próprios dados controlados.
 - O nome de vigia fica editável no painel. Ainda não há autenticação individual nem verificação independente de identidade.
 - A identidade Horizon foi aplicada em estilo; não foi reproduzida nenhuma matriz de logomarca não disponível no repositório.
 - Nenhum serviço foi implantado, nenhum backend foi alterado e nenhum teste físico foi executado nesta mudança.
