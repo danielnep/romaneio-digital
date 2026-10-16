@@ -31,6 +31,16 @@ test("servidor: grava SQLite, confirma ACK e não duplica tentativas",async()=>{
     assert.equal(count.n,1);
     const persist=app.database().prepare("SELECT payload_json FROM operations WHERE operation_id=?").get(id);
     assert.equal(JSON.parse(persist.payload_json).motorista,"Teste");
+    const patio=await fetch(base+"/api/patio?portaria=P1",{headers});
+    assert.equal(patio.status,200);
+    const beforeExit=await patio.json();
+    assert.equal(beforeExit.vehicles.some(v=>v.idLocal==="abc"),true);
+    const exitId="exit_"+randomBytes(16).toString("hex");
+    const exitPayload={tipoRegistro:"Saida",idLocal:"abc",portaria:"P1",placaBau:"ABC1234"};
+    const exitResponse=await fetch(base+"/api/records",{method:"POST",headers,body:JSON.stringify({operationId:exitId,payload:exitPayload})});
+    assert.equal(exitResponse.status,201);
+    const afterExit=await (await fetch(base+"/api/patio?portaria=P1",{headers})).json();
+    assert.equal(afterExit.vehicles.some(v=>v.idLocal==="abc"),false);
     const withoutToken=await fetch(base+"/api/records/"+id);
     assert.equal(withoutToken.status,401);
     const invalid=await fetch(base+"/api/records",{method:"POST",headers,body:"not json"});
