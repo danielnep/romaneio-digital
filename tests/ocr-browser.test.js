@@ -27,7 +27,7 @@ async function begin() {
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
   browser = await chromium.launch({ headless: true, executablePath: process.env.ROMANEIO_CHROME_BIN || undefined, args: ["--no-sandbox", "--disable-dev-shm-usage", "--ignore-certificate-errors"] });
   context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, timezoneId: "America/Sao_Paulo", ignoreHTTPSErrors: true, geolocation: { latitude: -20.14, longitude: -44.89 }, permissions: ["geolocation", "clipboard-read", "clipboard-write"] });
-  await context.addInitScript(() => { localStorage.setItem("rd_onboarding_done", "true"); });
+  await context.addInitScript(() => { localStorage.setItem("rd_onboarding_done", "true"); sessionStorage.setItem("rd_sync_token","test-session-token"); });
   // Mesmo SDK/modelo remoto, transportado pelo Node para o navegador de teste.
   // O motor e o reconhecimento continuam reais; nenhum resultado OCR é simulado.
   await context.route(/^https:\/\/(cdn\.jsdelivr\.net|tessdata\.projectnaptha\.com|unpkg\.com)\//, async route => {
@@ -35,7 +35,11 @@ async function begin() {
     const body = Buffer.from(await response.arrayBuffer()); network.push({ url: route.request().url(), status: response.status, bytes: body.length, contentType: response.headers.get("content-type") });
     await route.fulfill({ status: response.status, body, contentType: response.headers.get("content-type") || "application/octet-stream", headers: { "access-control-allow-origin": "*" } });
   });
-  await context.route("**/script.google.com/**", async route => { payloads.push(Object.fromEntries(new URLSearchParams(route.request().postData() || ""))); await route.fulfill({ status: 200, body: "ok", headers: { "access-control-allow-origin": "*" } }); });
+  await context.route("**/api/records", async route => {
+     const req=JSON.parse(route.request().postData() || "{}");
+     if(req.payload)payloads.push(req.payload);
+     await route.fulfill({status:201,contentType:"application/json",body:JSON.stringify({ok:true,confirmed:true,operationId:req.operationId,persistedAt:new Date().toISOString()})});
+   });
   page = await context.newPage(); page.on("pageerror", e => errors.push(e.message));
   await page.goto("http://127.0.0.1:" + server.address().port + "/", { waitUntil: "networkidle" });
   assert.equal(await page.evaluate(() => typeof window.Tesseract?.createWorker), "function", "SDK indisponível: " + JSON.stringify({ errors, network }));
