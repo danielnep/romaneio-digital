@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "test": "node --test tests/ocr-core.test.js",
+    "test": "node --test tests/ocr-core.test.js tests/ui-guardian.test.js",
     "test:browser": "node tests/ocr-browser.test.js"
   },
   "devDependencies": {
