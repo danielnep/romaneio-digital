@@ -46,6 +46,26 @@ async function postPayload(payload,{silent=false}={}){
   if(!silent)toast(confirmed?"Gravado no servidor.":"Salvo no dispositivo; sincronização pendente.");
   updateMainKPIs();return {queued:!confirmed,confirmed,operationId};
 }
+async function refreshPatioFromServer(){
+  if(!navigator.onLine||!syncReady())return false;
+  const url=serverBase()+"/api/patio?portaria="+encodeURIComponent($("portaria").value);
+  const response=await fetch(url,{headers:{"Authorization":"Bearer "+syncToken()},signal:AbortSignal.timeout(15000)});
+  const data=await response.json().catch(()=>null);
+  if(!response.ok||data?.ok!==true||!Array.isArray(data.vehicles))throw new Error("Pátio remoto indisponível.");
+  const portaria=$("portaria").value,local=getPatio().filter(v=>v.portaria!==portaria);
+  const byId=new Map(data.vehicles.map(v=>[String(v.idLocal),v]));
+  for(const entry of await getQueue()){
+    if(entry.status==="sent_unverified"||!entry.payload||entry.payload.portaria!==portaria)continue;
+    const v=entry.payload;
+    if(v.tipoRegistro==="Entrada")byId.set(String(v.idLocal),{idLocal:v.idLocal,portaria:v.portaria,empresa:v.empresa,tipoVeiculo:v.tipoVeiculo,placaBau:v.placaBau,placaCavalo:v.placaCavalo,motorista:v.motorista,vigiaEntrada:v.vigiaEntrada,porteVeiculo:v.porteVeiculo,horaAtual:v.horaAtual,dataAtual:v.dataAtual});
+    if(v.tipoRegistro==="Saida"){
+      if(v.idLocal)byId.delete(String(v.idLocal));
+      else for(const [id,vehicle] of byId)if(vehicle.placaBau===v.placaBau||vehicle.placaCavalo===v.placaBau){byId.delete(id);break}
+    }
+  }
+  setPatio([...local,...byId.values()]);
+  return true;
+}
 let syncingQueue=false;
 async function syncQueue(){
   if(syncingQueue||!navigator.onLine||!syncReady())return;
@@ -61,6 +81,7 @@ async function syncQueue(){
       }catch(error){syncState("Sincronização pendente: "+error.message);break}
     }
     if(!(await getQueue()).some(v=>v.status!=="sent_unverified"))syncState("Todos os registros novos foram confirmados pelo servidor.");
+    try{await refreshPatioFromServer()}catch{syncState("Envio verificado; atualização do pátio remoto pendente.")}
   }catch(e){syncState("Falha local: "+e.message)}
   finally{syncingQueue=false;updateMainKPIs()}
 }
@@ -246,7 +267,7 @@ $("btnSelfie").onclick=()=>$("fileSelfie").click();$("fileSelfie").onchange=e=>g
 $("entryForm").onsubmit=async e=>{e.preventDefault();if(!validEntryData())return toast("Confira os dados obrigatórios.");if(!$('chkVistoria').checked)return toast("Confirme a vistoria.");if(!state.fotoCarimbadaBase64)return toast("Faça a selfie de confirmação.");await salvarEntrada()};async function salvarEntrada(){try{setLoading("SALVANDO ENTRADA","Registrando a operação…");const gps=await getFreshGps().catch(()=>state.lastPosition),h=human(),obj={idLocal:state.activeId,tipoRegistro:"Entrada",portaria:$("portaria").value,empresa:$("empresa").value.trim(),tipoVeiculo:$("tipoVeiculo").value,placaCavalo:$("placaCavalo").value.trim().toUpperCase(),placaBau:$("placaBau").value.trim().toUpperCase(),motorista:$("motorista").value.trim(),rg:$("rg").value.trim(),cnh:$("cnh").value.trim(),ajudantes:$("ajudantes").value.trim(),materiais:$("chkNoMaterials").checked?"Nenhum material encontrado":$("materiais").value.trim(),vigiaEntrada:CONFIG.vigia,porteVeiculo:vehicleSize({tipoVeiculo:$("tipoVeiculo").value}),localizacao:gps?`${gps.coords.latitude},${gps.coords.longitude}`:currentGps(),observacoes:$("observacoes").value.trim()||"Sem observações",vigia:CONFIG.vigia,dataAtual:h.data,horaAtual:h.hora,calcoConfirmado:"SIM",vistoriaConfirmada:"SIM",modoRegistro:state.ocrManualUsed?"Manual / OCR falhou":state.ocrManuallyEdited?"OCR / dados revisados":state.ocrDocumentSuccess&&state.ocrPlateSuccess?"OCR / App Web":"OCR parcial / revisado",sinal:state.online?"ONLINE":"OFFLINE",fotoValidacao:state.fotoCarimbadaBase64,selfieTakenAt:state.selfieTakenAt||h.iso};const delivery=await postPayload(obj,{silent:true});addPatio({idLocal:obj.idLocal,portaria:obj.portaria,empresa:obj.empresa,tipoVeiculo:obj.tipoVeiculo,placaBau:obj.placaBau,placaCavalo:obj.placaCavalo,motorista:obj.motorista,vigiaEntrada:obj.vigiaEntrada,porteVeiculo:obj.porteVeiculo,horaAtual:obj.horaAtual,dataAtual:obj.dataAtual});stopMonitoring();clearDraft();resetEntry();closeOverlay();showView("viewMain");updateMainKPIs();toast(delivery.queued?"Entrada salva neste aparelho; envio pendente.":"Entrada enviada; confirme o recebimento no servidor.")}catch{closeOverlay();toast("Falha ao salvar. O registro foi preservado para sincronização.")}}
 async function cancelActive(stage){openOverlay(`<h3>Cancelar atendimento</h3><p>Informe o motivo para registrar o encerramento normal do atendimento.</p><div class="field"><label for="cancelReason">MOTIVO</label><textarea id="cancelReason"></textarea></div><button id="confirmCancel" type="button" class="btn btn-primary">Cancelar registro</button><button id="cancelCancel" type="button" class="btn btn-ghost">Voltar</button>`);$("confirmCancel").onclick=async()=>{const reason=$("cancelReason").value.trim();if(reason.length<3)return toast("Informe o motivo.");await postPayload({tipoRegistro:"Cancelamento",idLocal:state.activeId||"",portaria:$("portaria").value,vigia:CONFIG.vigia,etapa:stage,motivoCancelamento:reason,dataAtual:human().data,horaAtual:human().hora,localizacao:currentGps()});stopMonitoring();clearDraft();resetEntry();closeOverlay();showView("viewMain");toast("Cancelamento registrado no aparelho.")};$("cancelCancel").onclick=closeOverlay}
 ["btnCancelEntry1","btnCancelEntry2","btnCancelEntry3"].forEach(id=>$(id).onclick=()=>cancelActive("ENTRADA"));
-$("btnDocas").onclick=()=>{renderDocks();showView("viewDocks")};$("btnBackMainDocks").onclick=()=>showView("viewMain");function escapeHtml(s){return String(s??"").replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}function vehicleSize(vehicle) {
+$("btnDocas").onclick=()=>{renderDocks();showView("viewDocks");refreshPatioFromServer().then(updated=>{if(updated)renderDocks()}).catch(()=>toast("Sem consulta ao servidor. Exibindo dados deste aparelho."))};$("btnBackMainDocks").onclick=()=>showView("viewMain");function escapeHtml(s){return String(s??"").replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}function vehicleSize(vehicle) {
   if (vehicle.porteVeiculo) return vehicle.porteVeiculo;
   if (vehicle.tipoVeiculo === "Veículo Pequeno") return "Pequeno";
   if (vehicle.tipoVeiculo === "Caminhões & Carretas") return "Grande";
