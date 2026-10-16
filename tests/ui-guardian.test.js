@@ -31,7 +31,9 @@ function harness() {
     compact: x => String(x).toUpperCase().replace(/[^A-Z0-9]/g, ""),
     validPlate: x => /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(x)
   };
-  const context = { window, document, navigator, localStorage, RomaneioOcrCore, setInterval() {}, setTimeout() {}, clearTimeout() {}, scrollTo() {}, performance: { now: () => 10 } };
+  const sessionStorage={getItem:()=>null,setItem(){}},location={origin:"http://localhost:8080",hostname:"localhost"};
+  const crypto={randomUUID:()=>"fd97c91f-3234-45bc-9a3f-4c893cc49db1"};
+  const context = { window, document, navigator, localStorage, sessionStorage, location, crypto, URL, RomaneioOcrCore, setInterval() {}, setTimeout() {}, clearTimeout() {}, scrollTo() {}, performance: { now: () => 10 } };
   vm.runInNewContext(read("js/app.js") + "\nglobalThis._test={state,CONFIG,readDraft,saveDraft,updateEntryButton,updateExitSaveButton};", context);
   return { ...context, node, storage, api: context._test };
 }
