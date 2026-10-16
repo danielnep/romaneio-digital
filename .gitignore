@@ -1,2 +1,6 @@
 node_modules/
 test-results/
+data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
