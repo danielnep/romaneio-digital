@@ -1,7 +1,7 @@
 name: Romaneio - validação
 on:
   push:
-    branches: [fix/ui-guardian-operacional-20261016]
+    branches: [main]
   pull_request:
     branches: [main]
 jobs:
